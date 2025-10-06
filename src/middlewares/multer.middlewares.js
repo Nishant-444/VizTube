@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 	 * @param {Function} cb - The callback function to signal completion.
 	 */
 	destination: function (req, file, cb) {
-		cb(null, "./public/temp");
+		cb(null, "/tmp");
 	},
 
 	/**
