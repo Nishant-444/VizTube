@@ -19,7 +19,9 @@ app.use(cookieParser());
 
 // root route
 app.get('/', (req, res) => {
-  res.send('VizTube API is running 🚀');
+  res.send(
+    'VizTube API is running 🚀 | Documentation: https://github.com/nishant-444/viztube'
+  );
 });
 
 // import routes
