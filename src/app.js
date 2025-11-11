@@ -17,6 +17,11 @@ app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
+// root route
+app.get('/', (req, res) => {
+  res.send('VizTube API is running 🚀');
+});
+
 // import routes
 import healthcheckRouter from './routes/healthcheck.routes.js';
 import userRouter from './routes/user.routes.js';
