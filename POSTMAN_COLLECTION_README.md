@@ -1,8 +1,8 @@
-# Viztube-v2 Postman Collection Guide
+# Viztube Postman Collection Guide
 
 ## 📦 Overview
 
-This comprehensive Postman collection contains **43 API endpoints** covering all features of the Viztube-v2 video streaming platform backend.
+This comprehensive Postman collection contains **43 API endpoints** covering all features of the Viztube video streaming platform backend.
 
 ## 🚀 Quick Start
 
@@ -10,23 +10,23 @@ This comprehensive Postman collection contains **43 API endpoints** covering all
 
 1. Open Postman Desktop or Web
 2. Click "Import" button
-3. Select `Viztube-v2.postman_collection.json`
+3. Select `Viztube.postman_collection.json`
 4. Collection will be added to your workspace
 
 ### 2. Configure Variables
 
 The collection includes pre-configured variables:
 
-| Variable       | Description              | Default Value                       |
-| -------------- | ------------------------ | ----------------------------------- |
-| `baseUrl`      | API Base URL             | `http://localhost:8000/api/v1`      |
-| `accessToken`  | JWT Access Token         | Auto-populated on login             |
-| `refreshToken` | JWT Refresh Token        | Auto-populated on login             |
-| `userId`       | Current User ID          | Auto-populated on login             |
-| `videoId`      | Last Created Video ID    | Auto-populated on video upload      |
-| `commentId`    | Last Created Comment ID  | Auto-populated on comment creation  |
-| `tweetId`      | Last Created Tweet ID    | Auto-populated on tweet creation    |
-| `playlistId`   | Last Created Playlist ID | Auto-populated on playlist creation |
+| Variable       | Description              | Default Value                         |
+| -------------- | ------------------------ | ------------------------------------- |
+| `baseUrl`      | API Base URL             | `https://viztube.onrender.com/api/v1` |
+| `accessToken`  | JWT Access Token         | Auto-populated on login               |
+| `refreshToken` | JWT Refresh Token        | Auto-populated on login               |
+| `userId`       | Current User ID          | Auto-populated on login               |
+| `videoId`      | Last Created Video ID    | Auto-populated on video upload        |
+| `commentId`    | Last Created Comment ID  | Auto-populated on comment creation    |
+| `tweetId`      | Last Created Tweet ID    | Auto-populated on tweet creation      |
+| `playlistId`   | Last Created Playlist ID | Auto-populated on playlist creation   |
 
 ### 3. Start Testing
 
@@ -266,7 +266,7 @@ To use with deployed API:
 2. Go to "Variables" tab
 3. Update `baseUrl` value:
    - Local: `http://localhost:8000/api/v1`
-   - Production: `https://api.yourdomain.com/api/v1`
+   - Production: `https://viztube.onrender.com/api/v1`
 
 ### Add Custom Headers
 

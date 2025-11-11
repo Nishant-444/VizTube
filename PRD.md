@@ -1,12 +1,12 @@
 # Product Requirements Document (PRD)
 
-## Viztube-v2 - Video Sharing Platform Backend
+## Viztube - Video Sharing Platform Backend
 
 ---
 
 ## 1. Executive Summary
 
-**Project Name:** Viztube-v2  
+**Project Name:** Viztube  
 **Version:** 1.0.0  
 **Document Date:** November 10, 2025  
 **Author:** Nishant Sharma  
@@ -14,7 +14,7 @@
 
 ### 1.1 Product Overview
 
-Viztube-v2 is a comprehensive backend system for a video-sharing platform inspired by YouTube. It provides a robust RESTful API for managing users, videos, comments, subscriptions, playlists, and social interactions similar to modern video-sharing platforms.
+Viztube is a comprehensive backend system for a video-sharing platform inspired by YouTube. It provides a robust RESTful API for managing users, videos, comments, subscriptions, playlists, and social interactions similar to modern video-sharing platforms.
 
 ### 1.2 Product Vision
 
@@ -817,7 +817,7 @@ Authorization: Bearer <access_token>
 
 ### 16.1 Version Control
 
-- **Repository:** https://github.com/Nishant-444/Viztube-v2
+- **Repository:** https://github.com/Nishant-444/Viztube
 - **Branch Strategy:** Main branch for production-ready code
 - **Commit Guidelines:** Descriptive commit messages
 
@@ -880,7 +880,7 @@ Authorization: Bearer <access_token>
 ## 19. Contact & Contributors
 
 **Primary Author:** Nishant Sharma  
-**Project Repository:** [Viztube-v2](https://github.com/Nishant-444/Viztube-v2)  
+**Project Repository:** [Viztube](https://github.com/Nishant-444/Viztube)  
 **License:** ISC
 
 ---

@@ -5,7 +5,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-v8.19.1-brightgreen.svg)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-ISC-yellow.svg)](LICENSE)
 
-VizTube-v2 is a complete, high-performance backend service for a video-sharing platform, built with Node.js, Express, and MongoDB. It's designed as a standalone, scalable API that provides all the core functionalities of a modern video application like YouTube.
+VizTube is a complete, high-performance backend service for a video-sharing platform, built with Node.js, Express, and MongoDB. It's designed as a standalone, scalable API that provides all the core functionalities of a modern video application like YouTube.
 
 This project is intended for **developers** to use as a robust foundation for their own video applications or to understand how a complex backend system is built and organized.
 
@@ -21,14 +21,14 @@ This project is intended for **developers** to use as a robust foundation for th
 - **📝 Personalized Content Curation:** Full CRUD for user-created video playlists and persistent watch history (read & write)
 - **📊 Channel Analytics:** A dashboard for creators to view total video views, subscribers, likes, and a list of their uploaded videos
 - **⚠️ Robust Error Handling:** Consistent API error and success responses for easy integration
-- **🔄 Pagination Support:** Efficient data loading with mongoose-aggregate-paginate-v2
+- **🔄 Pagination Support:** Efficient data loading with mongoose-aggregate-paginate
 - **📁 File Upload Validation:** Size and type validation for videos, images, and thumbnails
 
 ---
 
 ## 🚀 Demo & Usage (API Interaction)
 
-Since VizTube-v2 is a backend-only project, you'll interact with it using an API client like Postman or any frontend application.
+Since VizTube is a backend-only project, you'll interact with it using an API client like Postman or any frontend application.
 
 ### Quick Start Flow
 
@@ -72,7 +72,7 @@ The project employs a clear, modular architecture, separating concerns to enhanc
 ### 🗂️ Folder Tree
 
 ```
-viztube-v2/
+viztube/
 ├── public/
 │   └── temp/                          # Temporary file storage
 │
@@ -142,7 +142,7 @@ viztube-v2/
 ├── package-lock.json                  # Locked dependency versions
 ├── PRD.md                             # Product Requirements Document
 ├── POSTMAN_COLLECTION_README.md       # Postman collection guide
-├── Viztube-v2.postman_collection.json # Complete API collection
+├── Viztube.postman_collection.json # Complete API collection
 └── README.md                          # This file
 ```
 
@@ -162,8 +162,8 @@ viztube-v2/
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/Nishant-444/Viztube-v2.git
-   cd Viztube-v2
+   git clone https://github.com/Nishant-444/Viztube.git
+   cd Viztube
    ```
 
 2. **Install dependencies:**
@@ -230,7 +230,7 @@ This project is fully documented with a comprehensive Postman Collection and a d
 
 ### 📚 Available Documentation
 
-- **[Postman Collection](./Viztube-v2.postman_collection.json)** - 43 fully documented API endpoints
+- **[Postman Collection](./Viztube.postman_collection.json)** - 43 fully documented API endpoints
   - Import into Postman for instant testing
   - Includes auto-save scripts for tokens and IDs
   - Pre-configured environments and variables
@@ -338,7 +338,7 @@ Ensure all environment variables are set in your hosting platform:
 
 ### Using Postman
 
-1. Import `Viztube-v2.postman_collection.json`
+1. Import `Viztube.postman_collection.json`
 2. Set `baseUrl` to `http://localhost:8000/api/v1`
 3. Start with "Register User" or "Login User"
 4. Tokens are automatically saved for subsequent requests
@@ -452,13 +452,13 @@ This project is licensed under the **ISC License**.
 
 **Author:** Nishant Sharma  
 **GitHub:** [@Nishant-444](https://github.com/Nishant-444)  
-**Project Repository:** [Viztube-v2](https://github.com/Nishant-444/Viztube-v2)
+**Project Repository:** [Viztube](https://github.com/Nishant-444/Viztube)
 
 ### Get Help
 
 - 📖 Read the [PRD.md](./PRD.md) for detailed documentation
-- 📮 [Open an issue](https://github.com/Nishant-444/Viztube-v2/issues) for bug reports
-- 💡 [Start a discussion](https://github.com/Nishant-444/Viztube-v2/discussions) for questions
+- 📮 [Open an issue](https://github.com/Nishant-444/Viztube/issues) for bug reports
+- 💡 [Start a discussion](https://github.com/Nishant-444/Viztube/discussions) for questions
 
 ---
 
