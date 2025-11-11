@@ -20,7 +20,7 @@ app.use(cookieParser());
 // root route
 app.get('/', (req, res) => {
   res.send(
-    'VizTube API is running 🚀 | Documentation: https://github.com/nishant-444/viztube'
+    '<h1>VizTube API is running 🚀</h1><p>Documentation: <a href="https://github.com/nishant-444/viztube" target="_blank">https://github.com/nishant-444/viztube</a></p>'
   );
 });
 
