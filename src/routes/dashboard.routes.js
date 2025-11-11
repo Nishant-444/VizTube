@@ -1,15 +1,15 @@
-import { Router } from "express";
+import { Router } from 'express';
 import {
-	getChannelStats,
-	getChannelVideos,
-} from "../controllers/dashboard.controllers.js";
-import { authMid } from "../middlewares/auth.middlewares.js";
+  getChannelStats,
+  getChannelVideos,
+} from '../controllers/dashboard.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
 
-const dashboard = Router();
+const router = Router();
 
-dashboard.use(authMid); // Apply auth middleware to all routes in this file
+router.use(verifyJWT);
 
-dashboard.get("/stats", getChannelStats);
-dashboard.get("/videos", getChannelVideos);
+router.route('/stats').get(getChannelStats);
+router.route('/videos').get(getChannelVideos);
 
-export default dashboard;
+export default router;

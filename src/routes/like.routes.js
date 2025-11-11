@@ -1,16 +1,28 @@
-import { Router } from "express";
+import { Router } from 'express';
 import {
-	getLikedVideos,
-	toggleCommentLike,
-	toggleTweetLike,
-	toggleVideoLike,
-} from "../controllers/like.controllers.js";
-import { authMid } from "../middlewares/auth.middlewares.js";
+  getLikedVideos,
+  toggleCommentLike,
+  toggleVideoLike,
+  toggleTweetLike,
+} from '../controllers/like.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { validateMongoId } from '../validators/auth.validators.js';
 
-const like = Router();
+const router = Router();
+router.use(verifyJWT);
 
-like.post("/like-video/:videoId", authMid, toggleVideoLike);
-like.post("/like-comment/:commentId", authMid, toggleCommentLike);
-like.post("/toggle-tweet-like/:tweetId", authMid, toggleTweetLike);
-like.get("/get-liked-videos", authMid, getLikedVideos);
-export default like;
+router
+  .route('/toggle/v/:videoId')
+  .post(validateMongoId('videoId'), toggleVideoLike);
+
+router
+  .route('/toggle/c/:commentId')
+  .post(validateMongoId('commentId'), toggleCommentLike);
+
+router
+  .route('/toggle/t/:tweetId')
+  .post(validateMongoId('tweetId'), toggleTweetLike);
+
+router.route('/videos').get(getLikedVideos);
+
+export default router;

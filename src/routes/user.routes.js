@@ -1,71 +1,106 @@
-import { Router } from "express";
+import { Router } from 'express';
+import * as userController from '../controllers/user.controller.js';
+import { upload } from '../middlewares/multer.middleware.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+
+// validators
 import {
-	changeCurrentPassword,
-	getCurrentUser,
-	getUserChannelProfile,
-	getWatchHistory,
-	login,
-	logout,
-	refToken,
-	register,
-	updateAccountDetails,
-	updateUserAvatar,
-	updateUserCoverImage,
-} from "../controllers/user.controllers.js";
-import { upload } from "../middlewares/multer.middlewares.js";
+  validateRegistration,
+  validateLogin,
+  validateChangePassword,
+  validateUpdateDetails,
+  validateMongoId,
+} from '../validators/auth.validators.js';
+
+// file validators
 import {
-	currentPasswordValidator,
-	loginValidator,
-	userRegValidator,
-} from "../validator/validator.js";
-import { validatorError } from "../middlewares/validator.middlewares.js";
-import { authMid } from "../middlewares/auth.middlewares.js";
+  validateRegistrationFiles,
+  validateAvatarFile,
+  validateCoverImageFile,
+} from '../validators/file.validators.js';
 
-const auth = Router();
+// username normalizer
+import { normalizeUsername } from '../middlewares/normalizeParams.middleware.js';
 
-auth.post(
-	"/register",
-	upload.fields([
-		{ name: "avatar", maxCount: 1 },
-		{ name: "coverImage", maxCount: 1 },
-	]),
-	userRegValidator(),
-	validatorError,
-	register
+const router = Router();
+
+// unsecured public routes
+router.param('id', validateMongoId('id'));
+router.route('/register').post(
+  upload.fields([
+    {
+      name: 'avatar',
+      maxCount: 1,
+    },
+    {
+      name: 'coverImage',
+      maxCount: 1,
+    },
+  ]),
+  asyncHandler(validateRegistration),
+  asyncHandler(validateRegistrationFiles),
+  asyncHandler(userController.registerUser)
 );
 
-auth.post("/login", loginValidator(), validatorError, login);
-auth.get("/reftoken", authMid, refToken);
-auth.patch("/logout", authMid, logout);
-auth.patch(
-	"/change-password",
-	currentPasswordValidator(),
-	validatorError,
-	authMid,
-	changeCurrentPassword
-);
-auth.get("/current-user-details", authMid, getCurrentUser);
-auth.patch(
-	"/update-account-details",
+router
+  .route('/login')
+  .post(asyncHandler(validateLogin), asyncHandler(userController.loginUser));
 
-	authMid,
-	updateAccountDetails
-);
+router
+  .route('/refresh-token')
+  .post(asyncHandler(userController.refreshAccessToken));
 
-auth.patch(
-	"/update-avatar",
-	authMid,
-	upload.single("avatar"),
-	updateUserAvatar
-);
+// jwt secured routes
 
-auth.patch(
-	"/cover-image",
-	authMid,
-	upload.single("coverImage"),
-	updateUserCoverImage
-);
+// This middleware runs for all routes defined AFTER it
+router.use(verifyJWT);
 
-auth.get("/c/:username", authMid, getUserChannelProfile);
-auth.get("/history", authMid, getWatchHistory);
-export default auth;
+router.route('/logout').post(asyncHandler(userController.logoutUser));
+
+router
+  .route('/change-password')
+  .post(
+    asyncHandler(validateChangePassword),
+    asyncHandler(userController.changeCurrentPassword)
+  );
+
+router
+  .route('/current-user-details')
+  .get(asyncHandler(userController.getCurrentUser));
+
+router
+  .route('/c/:username')
+  .get(
+    asyncHandler(normalizeUsername),
+    asyncHandler(userController.getUserChannelProfile)
+  );
+
+router
+  .route('/update-account')
+  .patch(
+    asyncHandler(validateUpdateDetails),
+    asyncHandler(userController.updateAccountDetails)
+  );
+
+router
+  .route('/update-avatar')
+  .patch(
+    upload.single('avatar'),
+    asyncHandler(validateAvatarFile),
+    asyncHandler(userController.updateUserAvatar)
+  );
+
+router
+  .route('/update-cover-image')
+  .patch(
+    upload.single('coverImage'),
+    asyncHandler(validateCoverImageFile),
+    asyncHandler(userController.updateUserCoverImage)
+  );
+
+router
+  .route('/watch-history')
+  .get(asyncHandler(userController.getWatchHistory));
+
+export default router;

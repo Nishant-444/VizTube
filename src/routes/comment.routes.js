@@ -1,15 +1,20 @@
-import { Router } from "express";
-import { authMid } from "../middlewares/auth.middlewares.js";
-import {
-	addComment,
-	deleteComment,
-	getVideoComments,
-	updateComment,
-} from "../controllers/comment.controllers.js";
-const comment = Router();
-comment.get("/get-video-comments/:videoId", authMid, getVideoComments);
-comment.post("/add-comment/:videoId", authMid, addComment);
-comment.patch("/update-comment/:commentId", authMid, updateComment);
-comment.delete("/delete-comment/:commentId", authMid, deleteComment);
+import { Router } from 'express';
+import * as commentController from '../controllers/comment.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { validateMongoId } from '../validators/auth.validators.js';
 
-export default comment;
+const router = Router();
+
+router.use(verifyJWT);
+
+router
+  .route('/:videoId')
+  .get(validateMongoId('videoId'), commentController.getVideoComments)
+  .post(validateMongoId('videoId'), commentController.addComment);
+
+router
+  .route('/c/:commentId')
+  .delete(validateMongoId('commentId'), commentController.deleteComment)
+  .patch(validateMongoId('commentId'), commentController.updateComment);
+
+export default router;

@@ -1,18 +1,18 @@
-import { Router } from "express";
-import { authMid } from "../middlewares/auth.middlewares.js";
-import {
-	createTweet,
-	deleteTweetById,
-	getUserTweetsById,
-	updateTweetById,
-} from "../controllers/tweet.controllers.js";
+import { Router } from 'express';
+import * as tweetController from '../controllers/tweet.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { validateMongoId } from '../validators/auth.validators.js';
 
-const tweet = Router();
-tweet.use(authMid);
+const router = Router();
+router.use(verifyJWT);
 
-tweet.post("/create-tweet", createTweet);
-tweet.get("/get-user-tweets/:userId", getUserTweetsById);
-tweet.patch("/update-tweet/:tweetId", updateTweetById);
-tweet.delete("/delete-tweet/:tweetId", deleteTweetById);
+router.route('/').post(tweetController.createTweet);
+router
+  .route('/user/:userId')
+  .get(validateMongoId('userId'), tweetController.getUserTweets);
+router
+  .route('/:tweetId')
+  .patch(validateMongoId('tweetId'), tweetController.updateTweet)
+  .delete(validateMongoId('tweetId'), tweetController.deleteTweet);
 
-export default tweet;
+export default router;

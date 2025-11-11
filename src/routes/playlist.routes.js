@@ -1,30 +1,34 @@
-import { Router } from "express";
-import {
-	addVideoToPlaylist,
-	createPlaylist,
-	deletePlaylist,
-	getPlaylistById,
-	getUserPlaylists,
-	removeVideoFromPlaylist,
-	updatePlaylist,
-} from "../controllers/playlist.controllers.js";
-import { authMid } from "../middlewares/auth.middlewares.js";
+import { Router } from 'express';
+import * as playlistController from '../controllers/playlist.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { validateMongoId } from '../validators/auth.validators.js';
 
-const playlist = Router();
-playlist.use(authMid); // Apply auth to all playlist routes
+const router = Router();
+router.use(verifyJWT);
 
-playlist.post("/create-playlist", createPlaylist);
-playlist.get("/get-user-playlists/:userId", getUserPlaylists);
-playlist.get("/get-playlist-by-id/:playlistId", getPlaylistById); // Corrected typo for consistency
-playlist.patch(
-	"/add-video-to-playlist/:playlistId/:videoId",
-	addVideoToPlaylist
-);
-playlist.patch(
-	"/remove-video-from-playlist/:playlistId/:videoId",
-	removeVideoFromPlaylist
-);
-playlist.delete("/delete-playlist/:playlistId", deletePlaylist);
-playlist.patch("/update-playlist/:playlistId", updatePlaylist);
+router.route('/').post(playlistController.createPlaylist);
 
-export default playlist;
+router
+  .route('/user/:userId')
+  .get(validateMongoId('userId'), playlistController.getUserPlaylists);
+
+router
+  .route('/:playlistId')
+  .get(validateMongoId('playlistId'), playlistController.getPlaylistById)
+  .patch(validateMongoId('playlistId'), playlistController.updatePlaylist)
+  .delete(validateMongoId('playlistId'), playlistController.deletePlaylist);
+
+router
+  .route('/:playlistId/:videoId')
+  .post(
+    validateMongoId('playlistId'),
+    validateMongoId('videoId'),
+    playlistController.addVideoToPlaylist
+  )
+  .delete(
+    validateMongoId('playlistId'),
+    validateMongoId('videoId'),
+    playlistController.removeVideoFromPlaylist
+  );
+
+export default router;

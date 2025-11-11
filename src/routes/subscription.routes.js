@@ -1,20 +1,22 @@
-import { Router } from "express";
+import { Router } from 'express';
 import {
-	getSubscribedChannels,
-	getUserChannelSubscribers,
-	toggleSubscription,
-} from "../controllers/subscription.controller.js";
-import { authMid } from "../middlewares/auth.middlewares.js";
+  getSubscribedChannels,
+  getUserChannelSubscribers,
+  toggleSubscription,
+} from '../controllers/subscription.controller.js';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { validateMongoId } from '../validators/auth.validators.js';
 
-const subscription = Router();
+const router = Router();
+router.use(verifyJWT);
 
-subscription.use(authMid);
+router
+  .route('/c/:channelId')
+  .post(validateMongoId('channelId'), toggleSubscription)
+  .get(validateMongoId('channelId'), getUserChannelSubscribers);
 
-subscription.post("/toggle-subscription/:channelId", toggleSubscription);
-subscription.get("/get-subscribers/:channelId", getUserChannelSubscribers);
-subscription.get(
-	"/get-subscribed-channels/:subscriberId",
-	getSubscribedChannels
-);
+router
+  .route('/u/:subscriberId')
+  .get(validateMongoId('subscriberId'), getSubscribedChannels);
 
-export default subscription;
+export default router;
