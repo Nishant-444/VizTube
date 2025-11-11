@@ -1,4 +1,4 @@
-# VizTube-v2 - Backend Video Platform
+# VizTube - Backend Video Platform
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-v5.1.0-blue.svg)](https://expressjs.com/)
