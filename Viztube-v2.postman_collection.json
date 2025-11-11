@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://viztube.onrender.com/api/v1",
+      "value": "https://viztube.onrender.com/api/v1",
       "type": "string"
     },
     {
