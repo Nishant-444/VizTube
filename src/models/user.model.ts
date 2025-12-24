@@ -13,9 +13,9 @@
 */
 
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+// import jwt from 'jsonwebtoken';
 import mongoose, { Schema } from 'mongoose';
-
+import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 const userSchema = new Schema(
   {
     username: {
@@ -78,12 +78,11 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password: string) {
   return await bcrypt.compare(password, this.password);
 };
 
 userSchema.methods.generateAccessToken = function () {
-  // short lived access token
   return jwt.sign(
     {
       _id: this._id,
@@ -91,8 +90,10 @@ userSchema.methods.generateAccessToken = function () {
       username: this.username,
       fullname: this.fullname,
     },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    process.env.ACCESS_TOKEN_SECRET as Secret,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    } as any
   );
 };
 
@@ -102,8 +103,8 @@ userSchema.methods.generateRefreshToken = function () {
     {
       _id: this._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+    process.env.REFRESH_TOKEN_SECRET as Secret,
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY } as any
   );
 };
 
