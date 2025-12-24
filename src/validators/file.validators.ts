@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { Request, Response, NextFunction } from 'express';
 
 const ALLOWED_IMAGE_TYPES = [
   'image/jpeg',
@@ -10,7 +11,7 @@ const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 // individual file validator
-const validateFile = (file, fieldName) => {
+const validateFile = (file: Express.Multer.File, fieldName: string) => {
   if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
     throw new ApiError(400, `${fieldName} must be a JPG, PNG, or WEBP`);
   }
@@ -23,8 +24,15 @@ const validateFile = (file, fieldName) => {
 };
 
 // combined files validator
-export const validateRegistrationFiles = (req, res, next) => {
-  const { avatar, coverImage } = req.files;
+export const validateRegistrationFiles = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { avatar, coverImage } = req.files as {
+    avatar?: Express.Multer.File[];
+    coverImage?: Express.Multer.File[];
+  };
 
   if (avatar && avatar[0]?.path) {
     validateFile(avatar[0], 'Avatar');
@@ -38,7 +46,11 @@ export const validateRegistrationFiles = (req, res, next) => {
 };
 
 // avatar file validator
-export const validateAvatarFile = (req, res, next) => {
+export const validateAvatarFile = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.file) {
     throw new ApiError(400, 'Avatar file is required for update');
   }
@@ -50,7 +62,11 @@ export const validateAvatarFile = (req, res, next) => {
 };
 
 // cover image file validator
-export const validateCoverImageFile = (req, res, next) => {
+export const validateCoverImageFile = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.file) {
     throw new ApiError(400, 'Cover image file is required for update');
   }

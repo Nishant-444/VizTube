@@ -1,10 +1,11 @@
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import mongoose from 'mongoose';
+import { Request, Response, NextFunction } from 'express';
 
 // Helper function for password rules
-const validatePasswordRules = (password) => {
-  const errors = [];
+const validatePasswordRules = (password: string) => {
+  const errors: string[] = [];
   if (!password) {
     errors.push('Password is required');
     return errors;
@@ -29,9 +30,13 @@ const validatePasswordRules = (password) => {
   return errors;
 };
 
-export const validateRegistration = (req, res, next) => {
+export const validateRegistration = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { fullname, username, email, password } = req.body;
-  const errors = [];
+  const errors: string[] = [];
 
   // fullname validation
   if (!fullname || fullname.trim() === '') {
@@ -78,9 +83,13 @@ export const validateRegistration = (req, res, next) => {
   next();
 };
 
-export const validateLogin = (req, res, next) => {
+export const validateLogin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { email, username, password } = req.body;
-  const errors = [];
+  const errors: string[] = [];
 
   if (
     (!email || email.trim() === '') &&
@@ -108,9 +117,13 @@ export const validateLogin = (req, res, next) => {
   next();
 };
 
-export const validateChangePassword = (req, res, next) => {
+export const validateChangePassword = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { oldPassword, newPassword } = req.body;
-  const errors = [];
+  const errors: string[] = [];
 
   // check existence
   if (!oldPassword) {
@@ -139,9 +152,13 @@ export const validateChangePassword = (req, res, next) => {
   next();
 };
 
-export const validateUpdateDetails = (req, res, next) => {
+export const validateUpdateDetails = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { fullname, email, username } = req.body;
-  const errors = [];
+  const errors: string[] = [];
 
   if (!fullname || fullname.trim() === '') {
     errors.push('Full name is required');
@@ -174,8 +191,8 @@ export const validateUpdateDetails = (req, res, next) => {
   next();
 };
 
-export const validateMongoId = (param) =>
-  asyncHandler(async (req, res, next) => {
+export const validateMongoId = (param: string) =>
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params[param];
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new ApiError(400, `Invalid ${param}`);
