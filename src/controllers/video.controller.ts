@@ -9,44 +9,53 @@ import {
   uploadOnCloudinary,
 } from '../utils/cloudinary.js';
 import { paginationOptions } from '../config/paginationOptions.js';
+import { CloudinaryResponse } from '../types/cloudinary.types.js';
 
 const publishAVideo = asyncHandler(async (req, res) => {
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized');
+  }
   const { title, description } = req.body;
-  const userId = req.user._id;
+  const userId = req.user?._id;
+  const { videoFile, thumbnail } = req.files as {
+    videoFile: Express.Multer.File[];
+    thumbnail: Express.Multer.File[];
+  };
 
   if (!title || title.trim() === '') {
     throw new ApiError(400, 'Title is required');
   }
 
-  const videoFilePath = req.files?.videoFile?.[0]?.path;
-  const thumbnailPath = req.files?.thumbnailFile?.[0]?.path;
-
-  if (!videoFilePath) {
+  if (!videoFile[0].path) {
     throw new ApiError(400, 'Video is required');
   }
-  if (!thumbnailPath) {
+  const videoFilePath = videoFile[0].path;
+
+  if (!thumbnail[0].path) {
     throw new ApiError(400, 'Thumbnail is required');
   }
+  const thumbnailPath = thumbnail[0].path;
 
-  let videoFile;
-  let thumbnail;
+  let videoFileUpload: CloudinaryResponse | null = null;
+
+  let thumbnailUpload: CloudinaryResponse | null = null;
 
   try {
-    videoFile = await uploadOnCloudinary(videoFilePath);
-    thumbnail = await uploadOnCloudinary(thumbnailPath);
+    videoFileUpload = await uploadOnCloudinary(videoFilePath);
+    thumbnailUpload = await uploadOnCloudinary(thumbnailPath);
 
     const video = await Video.create({
       title,
-      description: description || '', //description is optional
+      description: description || '', // optional
       videoFile: {
-        url: videoFile.url,
-        public_id: videoFile.public_id,
+        url: videoFileUpload?.url,
+        public_id: videoFileUpload?.public_id,
       },
       thumbnail: {
-        url: thumbnail.url,
-        public_id: thumbnail.public_id,
+        url: thumbnailUpload?.url,
+        public_id: thumbnailUpload?.public_id,
       },
-      duration: videoFile.duration,
+      duration: 0, // TODO: Extract video duration with ffmpeg in Postgres migration
       owner: userId,
       isPublished: true,
     });
@@ -60,12 +69,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, video, 'Video published successfully'));
   } catch (error) {
     console.log('Video uploading failed');
-
-    if (videoFile) {
-      await deleteFromCloudinary(videoFile.public_id);
+    if (videoFileUpload) {
+      await deleteFromCloudinary(videoFileUpload.public_id);
     }
-    if (thumbnail) {
-      await deleteFromCloudinary(thumbnail.public_id);
+    if (thumbnailUpload) {
+      await deleteFromCloudinary(thumbnailUpload.public_id);
     }
 
     throw new ApiError(
@@ -103,8 +111,11 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  const { thumbnail } = req.files;
+  const { thumbnail } = req.files as { thumbnail?: Express.Multer.File[] };
   const { videoId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized');
+  }
 
   // if (!isValidObjectId(videoId)) {
   //   throw new ApiError(400, 'Invalid video ID');
@@ -129,7 +140,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   let oldThumbnailPubId = video.thumbnail.public_id;
 
   if (thumbnail) {
-    const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
+    const thumbnailLocalPath = thumbnail?.[0]?.path;
     thumbnailUploadResponse = await uploadOnCloudinary(thumbnailLocalPath);
     if (!thumbnailUploadResponse) {
       throw new ApiError(500, 'Error uploading new thumbnail');
@@ -154,7 +165,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   );
 
   if (thumbnailUploadResponse) {
-    uploadNewThumbnail = await deleteFromCloudinary(oldThumbnailPubId);
+    const uploadNewThumbnail = await deleteFromCloudinary(oldThumbnailPubId);
     if (!uploadNewThumbnail) {
       throw new ApiError(500, 'Error deleting old thumbnail from cloud');
     }
@@ -167,7 +178,9 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized');
+  }
   // if (!isValidObjectId(videoId)) {
   //   throw new ApiError(400, 'Invalid video ID');
   // }
@@ -211,7 +224,9 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized');
+  }
   // if (!isValidObjectId(videoId)) {
   //   throw new ApiError(400, 'Invalid video ID');
   // }
@@ -239,13 +254,14 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const { query, sortBy, sortType, userId } = req.query;
 
   const pipeline = [];
-  const matchStage = {};
+  const matchStage: any = {};
 
   if (userId) {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    const userIdStr = userId as string;
+    if (!mongoose.Types.ObjectId.isValid(userIdStr)) {
       throw new ApiError(400, 'Invalid userId');
     }
-    matchStage.owner = new mongoose.Types.ObjectId(userId);
+    matchStage.owner = new mongoose.Types.ObjectId(userIdStr);
   }
   if (query) {
     matchStage.$or = [
@@ -257,9 +273,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
   matchStage.isPublished = true;
   pipeline.push({ $match: matchStage });
 
-  const sortStage = {};
+  const sortStage: any = {};
   if (sortBy) {
-    sortStage[sortBy] = sortType === 'asc' ? 1 : -1;
+    const sortByStr = sortBy as string;
+    const sortTypeStr = sortType as string;
+    sortStage[sortByStr] = sortTypeStr === 'asc' ? 1 : -1;
   } else {
     sortStage.createdAt = -1;
   }
