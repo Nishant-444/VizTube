@@ -7,7 +7,10 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
-  const subscriberId = req.user?._id;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
+  const subscriberId = req.user._id;
 
   if (channelId.toString() === subscriberId.toString()) {
     throw new ApiError(400, 'You cannot subscribe to your own channel');

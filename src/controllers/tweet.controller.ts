@@ -8,6 +8,9 @@ import { paginationOptions } from '../config/paginationOptions.js';
 
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
 
   if (!content || content.trim() === '') {
@@ -36,7 +39,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'User not found');
   }
 
-  const pipeline = [];
+  const pipeline: any[] = [];
 
   pipeline.push(
     {
@@ -69,7 +72,9 @@ const updateTweet = asyncHandler(async (req, res) => {
   }
 
   const { tweetId } = req.params;
-
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const updatedTweet = await Tweet.findOneAndUpdate(
     {
       _id: tweetId,
@@ -94,6 +99,9 @@ const updateTweet = asyncHandler(async (req, res) => {
 
 const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
 
   const deletedTweet = await Tweet.findOneAndDelete({
     _id: tweetId,
