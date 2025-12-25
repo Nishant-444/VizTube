@@ -10,6 +10,9 @@ import { paginationOptions } from '../config/paginationOptions.js';
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
 
   const video = await Video.findById(videoId);
@@ -44,6 +47,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
 
   const comment = await Comment.findById(commentId);
@@ -78,6 +84,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
 
   const tweet = await Tweet.findById(tweetId);
@@ -111,10 +120,13 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
-  const { page = 1, limit = 10 } = req.query;
+  // const { page = 1, limit = 10 } = req.query;
 
-  const pipeline = [
+  const pipeline: any[] = [
     {
       $match: {
         likedBy: new mongoose.Types.ObjectId(userId),
