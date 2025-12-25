@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { CloudinaryResponse } from '../types/cloudinary.types.js';
 
 dotenv.config();
 // configure cloudinary
@@ -10,7 +11,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadOnCloudinary = async (localFilePath: string) => {
+const uploadOnCloudinary = async (
+  localFilePath: string
+): Promise<CloudinaryResponse | null> => {
   try {
     if (!localFilePath) {
       console.log('No file path provided');
@@ -19,6 +22,7 @@ const uploadOnCloudinary = async (localFilePath: string) => {
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: 'auto',
     });
+    console.log('CLOUDINARY RESPONSE:', JSON.stringify(response, null, 2));
 
     console.log(
       'File uploaded successfully on cloudinary. File src: ' + response.url
