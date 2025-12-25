@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 8000;
     console.log('Database connection successful, starting server...');
 
     app.listen(PORT, () => {
-      console.log(`App listening on https://viztube.onrender.com`);
+      console.log(`App listening on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('FAILED to start server!', err);
