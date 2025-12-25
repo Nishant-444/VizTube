@@ -10,7 +10,9 @@ const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
   const { content } = req.body;
-
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const ownerId = req.user._id;
 
   if (!content || content.trim() === '') {
@@ -45,7 +47,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Video not found');
   }
 
-  const pipeline = [];
+  const pipeline: any[] = [];
 
   pipeline.push(
     {
@@ -96,6 +98,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
 const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const { content } = req.body;
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const userId = req.user._id;
 
   if (!content || content.trim() === '') {
@@ -125,26 +130,19 @@ const updateComment = asyncHandler(async (req, res) => {
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
-  // 1. Get the 'commentId' from the request parameters (req.params).
-  // 2. (Important) Validate the 'commentId' (e.g., isValidObjectId).
-  //    (You should add the validateMongoId('commentId') middleware to this route).
+  if (!req.user?._id) {
+    throw new ApiError(401, 'Unauthorized - no user in request');
+  }
   const { commentId } = req.params;
 
-  // 3. Use 'findOneAndDelete' to find the comment and delete it atomically.
-  //    Query: Find a comment where '_id' matches 'commentId' AND 'owner' matches 'req.user._id'.
   const deletedComment = await Comment.findOneAndDelete({
     _id: commentId,
     owner: req.user._id,
   });
 
-  // 4. Check if the 'deletedComment' is null.
-  //    (If it's null, it means either the comment wasn't found OR the user was not the owner).
-  // 5. If null, throw a 404 (Not Found or Not Authorized) ApiError.
   if (!deletedComment) {
     throw new ApiError(404, 'Comment not found or you are not authorized');
   }
-
-  // 6. Send a 200 (OK) response with an empty object and a success message.
   return res
     .status(200)
     .json(new ApiResponse(200, {}, 'Comment deleted successfully'));
