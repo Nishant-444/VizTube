@@ -1,145 +1,134 @@
+import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { User } from '../models/user.model.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
-import { ApiResponse } from '../utils/ApiResponse.js';
-import jwt, { JwtPayload } from 'jsonwebtoken';
 import { cookieOptions } from '../config/cookieOptions.js';
-import mongoose from 'mongoose';
-import { CloudinaryResponse } from '../types/cloudinary.types.js';
+import prisma from '../lib/prisma.js';
+import bcrypt from 'bcrypt';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { generateAccessToken, generateRefreshToken } from '../utils/tokens.js';
 
-// only a helper function
-const generateAccessAndRefreshToken = async (userId: string) => {
+// internal functions
+
+const getSafeUser = (user: any) => {
+  const { password, refreshToken, ...safeUser } = user;
+  return safeUser;
+};
+
+const generateAccessAndRefreshToken = async (userId: number) => {
   try {
-    const user = await User.findById(userId);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new ApiError(404, 'User not Found!');
 
-    if (!user) {
-      throw new ApiError(404, 'User not Found!');
-    }
+    const accessToken = generateAccessToken({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    });
+    const refreshToken = generateRefreshToken(user.id);
 
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    await prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken },
+    });
 
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(
-      500,
-      'Something went wrong while generating access and refresh tokens'
-    );
+    throw new ApiError(500, 'Something went wrong while generating tokens');
   }
 };
 
-// to be exported functions
-const registerUser = asyncHandler(async (req, res) => {
-  const { fullname, email, username, password } = req.body;
-  const { avatar, coverImage } = req.files as {
-    avatar?: Express.Multer.File[];
-    coverImage?: Express.Multer.File[];
-  };
+// exported function
 
-  // check if user exist already
-  const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
+const registerUser = asyncHandler(async (req: Request, res: Response) => {
+  const { fullname, email, username, password } = req.body;
+
+  // Validation
+  if (
+    [fullname, email, username, password].some((field) => field?.trim() === '')
+  ) {
+    throw new ApiError(400, 'All fields are required');
+  }
+
+  // Conflict Check
+  const existingUser = await prisma.user.findFirst({
+    // findfirst - give the first match you find
+    where: { OR: [{ username }, { email }] },
   });
 
-  if (existedUser) {
+  if (existingUser) {
     throw new ApiError(409, 'User with email or username already exists');
   }
 
-  if (!avatar?.[0]?.path) {
-    throw new ApiError(400, 'Avatar file is required');
-  }
-  const avatarLocalPath = avatar?.[0]?.path;
+  // File Uploads
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const avatarLocalPath = files?.avatar?.[0]?.path;
+  const coverLocalPath = files?.coverImage?.[0]?.path;
 
-  if (!coverImage?.[0]?.path) {
-    throw new ApiError(400, 'Cover Image file is required');
-  }
-  const coverLocalPath = coverImage?.[0]?.path;
+  if (!avatarLocalPath) throw new ApiError(400, 'Avatar file is required');
 
-  let avatarUpload: CloudinaryResponse | null = null;
+  let avatarUpload, coverImageUpload;
+
   try {
     avatarUpload = await uploadOnCloudinary(avatarLocalPath);
-    console.log('Uploaded Avatar', avatarUpload);
-  } catch (error) {
-    console.log('Error uploading avatar', error);
-    throw new ApiError(500, 'Failed to upload avatar');
-  }
-
-  let coverImageUpload: CloudinaryResponse | null = null;
-  try {
-    coverImageUpload = await uploadOnCloudinary(coverLocalPath);
-    console.log('Uploaded cover image', coverImageUpload);
-  } catch (error) {
-    console.log('Error uploading cover image', error);
-    throw new ApiError(500, 'Failed to upload cover image');
-  }
-
-  try {
-    const user = await User.create({
-      fullname,
-      avatar: avatarUpload?.url,
-      coverImage: coverImageUpload?.url || '',
-      email,
-      password,
-      username: username.toLowerCase(),
-    });
-
-    const createdUser = await User.findById(user._id).select(
-      '-password -refreshToken'
-    );
-
-    if (!createdUser) {
-      throw new ApiError(500, 'Something went wrong while registering a user');
+    if (coverLocalPath) {
+      coverImageUpload = await uploadOnCloudinary(coverLocalPath);
     }
+  } catch (error) {
+    throw new ApiError(500, 'Failed to upload images');
+  }
+
+  try {
+    // Create User
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        fullname,
+        email,
+        password: hashedPassword,
+        username: username.toLowerCase(),
+        avatar: avatarUpload?.url || '',
+        coverImage: coverImageUpload?.url || '',
+      },
+    });
 
     return res
       .status(201)
-      .json(new ApiResponse(200, createdUser, 'User registered successfully!'));
+      .json(
+        new ApiResponse(200, getSafeUser(user), 'User registered successfully!')
+      );
   } catch (error) {
-    console.log('User creation failed');
-    if (avatarUpload) {
+    // Rollback Cloudinary on DB Failure
+    if (avatarUpload?.public_id)
       await deleteFromCloudinary(avatarUpload.public_id);
-    }
-    if (coverImageUpload) {
+    if (coverImageUpload?.public_id)
       await deleteFromCloudinary(coverImageUpload.public_id);
-    }
-
-    throw new ApiError(
-      500,
-      'Something went wrong while registering a user and images were deleted'
-    );
+    throw new ApiError(500, 'User registration failed, cleanup performed');
   }
 });
 
-const loginUser = asyncHandler(async function (req, res) {
+const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, username, password } = req.body;
 
-  // finding user
-  const user = await User.findOne({
-    $or: [{ email }, { username }],
+  if (!username && !email)
+    throw new ApiError(400, 'Username or email required');
+
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ email }, { username }] },
   });
 
-  if (!user) {
-    throw new ApiError(404, 'User not Found!');
-  }
+  if (!user) throw new ApiError(404, 'User not Found!');
 
-  // check the password
-  const isPasswordCorrect = await user.isPasswordCorrect(password);
-  if (!isPasswordCorrect) {
-    throw new ApiError(401, 'Password incorrect');
-  }
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) throw new ApiError(401, 'Invalid credentials');
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    user._id
-  );
-
-  const loggedInUser = await User.findById(user._id).select(
-    '-password -refreshToken'
+    user.id
   );
 
   return res
@@ -149,28 +138,20 @@ const loginUser = asyncHandler(async function (req, res) {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser, accessToken, refreshToken },
+        { user: getSafeUser(user), accessToken, refreshToken },
         'User logged in successfully'
       )
     );
 });
 
-const logoutUser = asyncHandler(async (req, res) => {
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
-  }
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+  // Safe navigation in case auth middleware failed (shouldn't happen)
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: {
-        refreshToken: undefined,
-      },
-    },
-    {
-      new: true,
-    }
-  );
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { refreshToken: null },
+  });
 
   return res
     .status(200)
@@ -179,31 +160,29 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, 'User logged out successfully'));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
-  if (!incomingRefreshToken) {
+  if (!incomingRefreshToken)
     throw new ApiError(401, 'Refresh token is required');
-  }
 
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET as string
     ) as JwtPayload;
 
-    const user = await User.findById(decodedToken?._id);
-    if (!user) {
-      throw new ApiError(401, 'Invalid refresh token');
-    }
+    const user = await prisma.user.findUnique({
+      where: { id: decodedToken.id },
+    });
 
-    if (incomingRefreshToken !== user?.refreshToken) {
+    if (!user || user.refreshToken !== incomingRefreshToken) {
       throw new ApiError(401, 'Invalid refresh token');
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
-      await generateAccessAndRefreshToken(user._id);
+      await generateAccessAndRefreshToken(user.id);
 
     return res
       .status(200)
@@ -213,283 +192,176 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           { accessToken, refreshToken: newRefreshToken },
-          'Access token refreshed successfully'
+          'Access token refreshed'
         )
       );
   } catch (error) {
-    throw new ApiError(
-      500,
-      'Something went wrong while refreshing access token'
-    );
+    throw new ApiError(401, 'Invalid refresh token');
   }
 });
 
-const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-  if (oldPassword === newPassword) {
-    throw new ApiError(
-      400,
-      'New password cannot be the same as the old password'
-    );
+const changeCurrentPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { oldPassword, newPassword } = req.body;
+    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) throw new ApiError(404, 'User not found');
+
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordCorrect) throw new ApiError(400, 'Invalid old password');
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: newHashedPassword },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, 'Password changed successfully'));
   }
+);
 
-  const user = await User.findById(req.user?._id);
-
-  const isPasswordValid = await user.isPasswordCorrect(oldPassword);
-
-  if (!isPasswordValid) {
-    throw new ApiError(401, 'Old password is incorrect');
-  }
-
-  user.password = newPassword;
-
-  await user.save();
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, 'Password changed successfully'));
-});
-
-const getCurrentUser = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, 'Current user details'));
 });
 
-const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullname, email, username } = req.body;
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
-  }
+const updateAccountDetails = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { fullname, email, username } = req.body;
+    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: {
-        fullname,
-        email: email,
-        username,
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { fullname, email, username },
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, getSafeUser(user), 'Account updated successfully')
+      );
+  }
+);
+
+const updateUserAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const avatarLocalPath = files?.avatar?.[0]?.path;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+  if (!avatarLocalPath) throw new ApiError(400, 'Avatar file is required');
+
+  // delete old avatar from Cloudinary
+  const oldUser = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+  const avatarUpload = await uploadOnCloudinary(avatarLocalPath);
+  if (!avatarUpload) throw new ApiError(500, 'Error uploading avatar');
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { avatar: avatarUpload.url },
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, getSafeUser(user), 'Avatar updated'));
+});
+
+const updateUserCoverImage = asyncHandler(
+  async (req: Request, res: Response) => {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const coverLocalPath = files?.coverImage?.[0]?.path;
+    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+    if (!coverLocalPath) throw new ApiError(400, 'Cover file is required');
+
+    const coverUpload = await uploadOnCloudinary(coverLocalPath);
+    if (!coverUpload) throw new ApiError(500, 'Error uploading cover');
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { coverImage: coverUpload.url },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, getSafeUser(user), 'Cover updated'));
+  }
+);
+
+const getUserChannelProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { username } = req.params;
+    const currentUserId = req.user?.id;
+
+    const channel = await prisma.user.findUnique({
+      where: { username },
+      include: {
+        _count: {
+          select: { subscribers: true, subscriptions: true },
+        },
       },
-    },
-    {
-      new: true,
+    });
+
+    if (!channel) throw new ApiError(404, 'Channel not found');
+
+    let isSubscribed = false;
+    if (currentUserId) {
+      // Check Subscription Table
+      const subscription = await prisma.subscription.findUnique({
+        where: {
+          subscriberId_channelId: {
+            subscriberId: currentUserId,
+            channelId: channel.id,
+          },
+        },
+      });
+      isSubscribed = !!subscription;
     }
-  ).select('-password -refreshToken');
 
-  if (!user) {
-    throw new ApiError(404, 'User not found');
+    const responseData = {
+      ...getSafeUser(channel),
+      subscriberCount: channel._count.subscribers,
+      channelsSubscribedToCount: channel._count.subscriptions,
+      isSubscribed,
+    };
+
+    // Remove _count from response as it's flattened
+    delete responseData._count;
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, responseData, 'Channel profile fetched'));
   }
+);
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, 'Account details updated successfully'));
-});
+const getWatchHistory = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-const updateUserAvatar = asyncHandler(async (req, res) => {
-  // TODO: Delete old avatar from Cloudinary
-  // Will implement properly in Postgres migration with separate avatarPublicId field
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized');
-  }
-
-  const { avatar } = req.files as {
-    avatar?: Express.Multer.File[];
-  };
-
-  if (!avatar?.[0]?.path) {
-    throw new ApiError(400, 'Avatar file is required');
-  }
-  const avatarLocalPath = avatar[0].path;
-
-  let avatarUpload: CloudinaryResponse | null = null;
-  avatarUpload = await uploadOnCloudinary(avatarLocalPath);
-
-  if (!avatarUpload) {
-    throw new ApiError(500, 'Something went wrong while uploading avatar');
-  }
-
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set: {
-        avatar: avatarUpload.url,
-      },
-    },
-    { new: true }
-  ).select('-password -refreshToken');
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, 'Avatar updated successfully'));
-});
-
-const updateUserCoverImage = asyncHandler(async (req, res) => {
-  // TODO: Delete old coverImage from Cloudinary
-  // Will implement properly in Postgres migration with separate PublicId field
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized');
-  }
-
-  const { coverImage } = req.files as {
-    coverImage?: Express.Multer.File[];
-  };
-
-  if (!coverImage?.[0]?.path) {
-    throw new ApiError(400, 'Cover Image file is required');
-  }
-  const coverImageLocalPath = coverImage[0].path;
-
-  let coverImageUpload: CloudinaryResponse | null = null;
-  coverImageUpload = await uploadOnCloudinary(coverImageLocalPath);
-
-  if (!coverImageUpload) {
-    throw new ApiError(500, 'Something went wrong while uploading cover image');
-  }
-
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: {
-        coverImage: coverImageUpload.url,
-      },
-    },
-    { new: true }
-  ).select('-password -refreshToken');
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, 'Cover image updated successfully'));
-});
-
-const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const { username } = req.params;
-
-  const channel = await User.aggregate([
-    {
-      $match: {
-        username: username,
-      },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'channel',
-        as: 'subscribers',
-      },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'subscriber',
-        as: 'subscribedTo',
-      },
-    },
-    {
-      $addFields: {
-        subscriberCount: {
-          $size: '$subscribers',
-        },
-        channelsSubscribedToCount: {
-          $size: '$subscribedTo',
-        },
-        isSubscribed: {
-          $cond: {
-            if: {
-              $in: [req.user?._id, '$subscribers.subscriber'],
-            },
-            then: true,
-            else: false,
+  const history = await prisma.watchHistory.findMany({
+    where: { userId: req.user.id },
+    orderBy: { watchedAt: 'desc' },
+    include: {
+      video: {
+        include: {
+          user: {
+            select: { fullname: true, username: true, avatar: true },
           },
         },
       },
     },
-    {
-      // project only necessary data
-      $project: {
-        fullname: 1,
-        username: 1,
-        email: 1,
-        avatar: 1,
-        subscriberCount: 1,
-        channelsSubscribedToCount: 1,
-        isSubscribed: 1,
-        coverImage: 1,
-      },
-    },
-  ]);
+  });
 
-  if (!channel.length) {
-    throw new ApiError(404, 'Channel not found');
-  }
+  if (!history.length) throw new ApiError(404, 'No watch history found');
 
+  const videos = history.map((h: any) => h.video);
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, channel[0], 'Channel profile fetched successfully')
-    );
+    .json(new ApiResponse(200, videos, 'Watch history fetched'));
 });
 
-const getWatchHistory = asyncHandler(async (req, res) => {
-  const user = await User.aggregate([
-    {
-      $match: {
-        _id: req.user?._id,
-      },
-    },
-    {
-      $lookup: {
-        from: 'videos',
-        localField: 'watchHistory',
-        foreignField: '_id',
-        as: 'watchHistory',
-        pipeline: [
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'owner',
-              foreignField: '_id',
-              as: 'owner',
-              pipeline: [
-                {
-                  $project: {
-                    fullname: 1,
-                    username: 1,
-                    avatar: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              owner: {
-                $first: '$owner',
-              },
-            },
-          },
-        ],
-      },
-    },
-  ]);
-
-  if (!user.length || !user[0].watchHistory.length) {
-    throw new ApiError(404, 'No watch history found');
-  }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        user[0].watchHistory,
-        'Watch history fetched successfully'
-      )
-    );
-});
-
-// 11 exports
 export {
   registerUser,
   loginUser,
