@@ -3,3 +3,6 @@
 .env
 /.git
 /dist
+/src/generated/
+*.db
+*.db-journal

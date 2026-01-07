@@ -16,4 +16,13 @@ declare global {
   }
 }
 
+import { User } from '@prisma/client';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User; // Add user to Request interface
+    }
+  }
+}
 export {};
