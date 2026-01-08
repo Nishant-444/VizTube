@@ -1,157 +1,124 @@
-import mongoose from 'mongoose';
-import { User } from '../models/user.model.js';
-import { Subscription } from '../models/subscription.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import prisma from '../lib/prisma.js';
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
-  }
-  const subscriberId = req.user._id;
+  const subscriberId = req.user.id;
 
-  if (channelId.toString() === subscriberId.toString()) {
+  const channelIdInt = parseInt(channelId);
+  if (isNaN(channelIdInt)) throw new ApiError(400, 'Invalid channel ID');
+
+  if (channelIdInt === subscriberId) {
     throw new ApiError(400, 'You cannot subscribe to your own channel');
   }
 
-  const channel = await User.findById(channelId);
-  if (!channel) {
+  const channelExists = await prisma.user.count({
+    where: { id: channelIdInt },
+  });
+  if (!channelExists) {
     throw new ApiError(404, 'Channel not found');
   }
 
-  const existingSubscription = await Subscription.findOne({
-    subscriber: subscriberId,
-    channel: channelId,
+  const existingSubscription = await prisma.subscription.findFirst({
+    where: {
+      channelId: channelIdInt,
+      subscriberId: subscriberId,
+    },
   });
 
-  let subscriptionStatus;
-  let statusCode;
-
   if (existingSubscription) {
-    await Subscription.findByIdAndDelete(existingSubscription._id);
-    subscriptionStatus = { subscribed: false };
-    statusCode = 200;
-  } else {
-    await Subscription.create({
-      subscriber: subscriberId,
-      channel: channelId,
+    await prisma.subscription.delete({
+      where: {
+        id: existingSubscription.id,
+      },
     });
-    subscriptionStatus = { subscribed: true };
-    statusCode = 201;
-  }
 
-  return res
-    .status(statusCode)
-    .json(
-      new ApiResponse(
-        statusCode,
-        subscriptionStatus,
-        'Subscription toggled successfully'
-      )
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { subscribed: false }, 'Unsubscribed successfully')
+      );
+  } else {
+    await prisma.subscription.create({
+      data: {
+        channelId: channelIdInt,
+        subscriberId: subscriberId,
+      },
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { subscribed: true }, 'Subscribed successfully')
+      );
+  }
 });
 
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
+  const channelIdInt = parseInt(channelId);
 
-  if (!channelId) {
-    throw new ApiError(400, 'Channel ID is required');
-  }
+  if (isNaN(channelIdInt)) throw new ApiError(400, 'Invalid channel ID');
 
-  const subscribers = await Subscription.aggregate([
-    {
-      $match: {
-        channel: new mongoose.Types.ObjectId(channelId),
+  const subscribers = await prisma.subscription.findMany({
+    where: {
+      channelId: channelIdInt,
+    },
+    include: {
+      subscriber: {
+        select: {
+          username: true,
+          fullname: true,
+          avatar: true,
+        },
       },
     },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'subscriber',
-        foreignField: '_id',
-        as: 'subscriberDetails',
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatar: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $unwind: '$subscriberDetails',
-    },
-    {
-      $replaceRoot: {
-        newRoot: '$subscriberDetails',
-      },
-    },
-  ]);
+  });
 
-  if (!subscribers) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, [], 'No subscribers found'));
-  }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, subscribers, 'Subscribers list fetched successfully')
-    );
-});
-
-const getSubscribedChannels = asyncHandler(async (req, res) => {
-  const { subscriberId } = req.params;
-
-  if (!subscriberId) {
-    throw new ApiError(400, 'Subscriber ID is required');
-  }
-
-  const subscribedChannels = await Subscription.aggregate([
-    {
-      $match: {
-        subscriber: new mongoose.Types.ObjectId(subscriberId),
-      },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'channel',
-        foreignField: '_id',
-        as: 'channelDetails',
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatar: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $unwind: '$channelDetails',
-    },
-    {
-      $replaceRoot: {
-        newRoot: '$channelDetails',
-      },
-    },
-  ]);
+  const formattedSubscribers = subscribers.map((sub) => sub.subscriber);
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        subscribedChannels,
+        formattedSubscribers,
+        'Subscribers fetched successfully'
+      )
+    );
+});
+
+const getSubscribedChannels = asyncHandler(async (req, res) => {
+  const { subscriberId } = req.params;
+  const subscriberIdInt = parseInt(subscriberId);
+
+  if (isNaN(subscriberIdInt)) throw new ApiError(400, 'Invalid subscriber ID');
+
+  const subscribedChannels = await prisma.subscription.findMany({
+    where: {
+      subscriberId: subscriberIdInt,
+    },
+    include: {
+      channel: {
+        select: {
+          username: true,
+          fullname: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+
+  const formattedChannels = subscribedChannels.map((sub) => sub.channel);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        formattedChannels,
         'Subscribed channels fetched successfully'
       )
     );
