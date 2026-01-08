@@ -7,7 +7,16 @@ import {
 } from '../utils/cloudinary.js';
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
 import prisma from '../lib/prisma.js';
+import fs from 'fs';
 
+// helper function
+const removeLocalFile = (localPath: string) => {
+  if (localPath && fs.existsSync(localPath)) {
+    fs.unlinkSync(localPath);
+  }
+};
+
+// exported functions
 const publishAVideo = asyncHandler(async (req, res) => {
   // --- 1. AUTHENTICATION (Unchanged) ---
   // We strictly check for the ID. If middleware failed, we stop here.
@@ -26,6 +35,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   // --- 3. VALIDATION (Unchanged) ---
   // Fail fast. Don't upload to cloud if basic data is missing.
   if (!title || title.trim() === '') {
+    if (videoLocalPath) removeLocalFile(videoLocalPath);
+    if (thumbnailLocalPath) removeLocalFile(thumbnailLocalPath);
     throw new ApiError(400, 'Title is required');
   }
   if (!videoLocalPath) {
