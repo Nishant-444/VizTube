@@ -141,10 +141,9 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   const responseData = {
     ...video,
-    // We override the original 'user' field with the cleaned version
     user: {
       ...restOfUser,
-      subscribersCount: _count.subscribers, // Move the count to a cleaner spot
+      subscribersCount: _count.subscribers, 
     },
   };
 
