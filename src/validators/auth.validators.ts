@@ -1,6 +1,4 @@
 import { ApiError } from '../utils/ApiError.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
-import mongoose from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 
 // Helper function for password rules
@@ -190,12 +188,3 @@ export const validateUpdateDetails = (
 
   next();
 };
-
-export const validateMongoId = (param: string) =>
-  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params[param];
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new ApiError(400, `Invalid ${param}`);
-    }
-    next();
-  });
