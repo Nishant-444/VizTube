@@ -1,68 +1,44 @@
-import mongoose from 'mongoose';
-import { Video } from '../models/video.model.js';
-import { Subscription } from '../models/subscription.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import prisma from '../lib/prisma.js';
 
 const getChannelStats = asyncHandler(async (req, res) => {
-  const channelId = req.user?._id;
+  const userId = req.user.id;
 
-  const totalVideos = await Video.countDocuments({ owner: channelId });
-
-  const totalSubscribers = await Subscription.countDocuments({
-    channel: channelId,
-  });
-
-  const videoStats = await Video.aggregate([
-    {
-      $match: {
-        owner: new mongoose.Types.ObjectId(channelId),
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalViews: { $sum: '$views' },
-      },
-    },
-  ]);
-
-  const totalViews = videoStats[0]?.totalViews || 0;
-
-  const likesStats = await Video.aggregate([
-    {
-      $match: {
-        owner: new mongoose.Types.ObjectId(channelId),
-      },
-    },
-    {
-      $lookup: {
-        from: 'likes',
-        localField: '_id',
-        foreignField: 'video',
-        as: 'videoLikes',
-      },
-    },
-    {
-      $addFields: {
-        likesCount: { $size: '$videoLikes' },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalLikes: { $sum: '$likesCount' },
-      },
-    },
-  ]);
-
-  const totalLikes = likesStats[0]?.totalLikes || 0;
+  const [totalViewsResult, totalSubscribers, totalVideos, totalLikes] =
+    await Promise.all([
+      prisma.video.aggregate({
+        where: {
+          userId: userId,
+        },
+        _sum: {
+          views: true,
+        },
+      }),
+      prisma.subscription.count({
+        where: {
+          channelId: userId,
+        },
+      }),
+      prisma.video.count({
+        where: {
+          userId: userId,
+        },
+      }),
+      prisma.like.count({
+        where: {
+          video: {
+            userId: userId,
+          },
+        },
+      }),
+    ]);
 
   const stats = {
-    totalVideos,
+    totalViews: totalViewsResult._sum.views || 0,
     totalSubscribers,
-    totalViews,
+    totalVideos,
     totalLikes,
   };
 
@@ -72,19 +48,35 @@ const getChannelStats = asyncHandler(async (req, res) => {
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-  const channelId = req.user?._id;
+  const userId = req.user.id;
 
-  const videos = await Video.find({ owner: channelId }).sort({
-    createdAt: -1,
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const videos = await prisma.video.findMany({
+    where: {
+      userId: userId,
+    },
+    include: {
+      _count: {
+        select: {
+          likes: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip: skip,
+    take: limit,
   });
 
-  if (!videos) {
-    throw new ApiError(500, 'Error fetching channel videos');
-  }
+  const totalVideos = await prisma.video.count({ where: { userId } });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, videos, 'Channel videos fetched successfully'));
+    .json(new ApiResponse(200, { videos, totalVideos }, 'Videos fetched'));
 });
 
 export { getChannelStats, getChannelVideos };
