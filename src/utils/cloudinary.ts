@@ -33,7 +33,9 @@ const uploadOnCloudinary = async (
     return response;
   } catch (error) {
     console.log('Error on cloudinary', error);
-    fs.unlinkSync(localFilePath);
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
     return null;
   }
 };
