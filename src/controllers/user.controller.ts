@@ -145,7 +145,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  // Safe navigation in case auth middleware failed (shouldn't happen)
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
   await prisma.user.update({
