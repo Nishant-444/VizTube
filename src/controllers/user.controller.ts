@@ -44,7 +44,7 @@ const generateAccessAndRefreshToken = async (userId: number) => {
 
 // exported function
 
-const registerUser = asyncHandler(async (req: Request, res: Response) => {
+const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, username, password } = req.body;
 
   // Validation
@@ -112,7 +112,7 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-const loginUser = asyncHandler(async (req: Request, res: Response) => {
+const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
   if (!username && !email)
@@ -144,7 +144,7 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+const logoutUser = asyncHandler(async (req, res) => {
   // Safe navigation in case auth middleware failed (shouldn't happen)
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
@@ -160,7 +160,7 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, {}, 'User logged out successfully'));
 });
 
-const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
+const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
@@ -200,55 +200,51 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-const changeCurrentPassword = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { oldPassword, newPassword } = req.body;
-    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user) throw new ApiError(404, 'User not found');
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!user) throw new ApiError(404, 'User not found');
 
-    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
-    if (!isPasswordCorrect) throw new ApiError(400, 'Invalid old password');
+  const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+  if (!isPasswordCorrect) throw new ApiError(400, 'Invalid old password');
 
-    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+  const newHashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { password: newHashedPassword },
-    });
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: newHashedPassword },
+  });
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {}, 'Password changed successfully'));
-  }
-);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, 'Password changed successfully'));
+});
 
-const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, 'Current user details'));
 });
 
-const updateAccountDetails = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { fullname, email, username } = req.body;
-    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullname, email, username } = req.body;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { fullname, email, username },
-    });
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { fullname, email, username },
+  });
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, getSafeUser(user), 'Account updated successfully')
-      );
-  }
-);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, getSafeUser(user), 'Account updated successfully')
+    );
+});
 
-const updateUserAvatar = asyncHandler(async (req: Request, res: Response) => {
+const updateUserAvatar = asyncHandler(async (req, res) => {
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   const avatarLocalPath = files?.avatar?.[0]?.path;
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
@@ -270,74 +266,69 @@ const updateUserAvatar = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, getSafeUser(user), 'Avatar updated'));
 });
 
-const updateUserCoverImage = asyncHandler(
-  async (req: Request, res: Response) => {
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const coverLocalPath = files?.coverImage?.[0]?.path;
-    if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
-    if (!coverLocalPath) throw new ApiError(400, 'Cover file is required');
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const coverLocalPath = files?.coverImage?.[0]?.path;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+  if (!coverLocalPath) throw new ApiError(400, 'Cover file is required');
 
-    const coverUpload = await uploadOnCloudinary(coverLocalPath);
-    if (!coverUpload) throw new ApiError(500, 'Error uploading cover');
+  const coverUpload = await uploadOnCloudinary(coverLocalPath);
+  if (!coverUpload) throw new ApiError(500, 'Error uploading cover');
 
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { coverImage: coverUpload.url },
-    });
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { coverImage: coverUpload.url },
+  });
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, getSafeUser(user), 'Cover updated'));
-  }
-);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, getSafeUser(user), 'Cover updated'));
+});
 
-const getUserChannelProfile = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { username } = req.params;
-    const currentUserId = req.user?.id;
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  const currentUserId = req.user?.id;
 
-    const channel = await prisma.user.findUnique({
-      where: { username },
-      include: {
-        _count: {
-          select: { subscribers: true, subscriptions: true },
+  const channel = await prisma.user.findUnique({
+    where: { username },
+    include: {
+      _count: {
+        select: { subscribers: true, subscriptions: true },
+      },
+    },
+  });
+
+  if (!channel) throw new ApiError(404, 'Channel not found');
+
+  let isSubscribed: boolean = false;
+  if (currentUserId) {
+    // Check Subscription Table
+    const subscription = await prisma.subscription.findUnique({
+      where: {
+        subscriberId_channelId: {
+          subscriberId: currentUserId,
+          channelId: channel.id,
         },
       },
     });
-
-    if (!channel) throw new ApiError(404, 'Channel not found');
-
-    let isSubscribed = false;
-    if (currentUserId) {
-      // Check Subscription Table
-      const subscription = await prisma.subscription.findUnique({
-        where: {
-          subscriberId_channelId: {
-            subscriberId: currentUserId,
-            channelId: channel.id,
-          },
-        },
-      });
-      isSubscribed = !!subscription;
-    }
-
-    const responseData = {
-      ...getSafeUser(channel),
-      subscriberCount: channel._count.subscribers,
-      channelsSubscribedToCount: channel._count.subscriptions,
-      isSubscribed,
-    };
-
-    // Remove _count from response as it's flattened
-    delete responseData._count;
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, responseData, 'Channel profile fetched'));
+    isSubscribed = !!subscription;
   }
-);
 
-const getWatchHistory = asyncHandler(async (req: Request, res: Response) => {
+  const responseData = {
+    ...getSafeUser(channel),
+    subscriberCount: channel._count.subscribers,
+    channelsSubscribedToCount: channel._count.subscriptions,
+    isSubscribed,
+  };
+
+  delete responseData._count;
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, responseData, 'Channel profile fetched'));
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
   const history = await prisma.watchHistory.findMany({
