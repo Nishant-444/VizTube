@@ -10,7 +10,6 @@ import {
   validateLogin,
   validateChangePassword,
   validateUpdateDetails,
-  validateMongoId,
 } from '../validators/auth.validators.js';
 
 // file validators
@@ -26,7 +25,6 @@ import { normalizeUsername } from '../middlewares/normalizeParams.middleware.js'
 const router = Router();
 
 // unsecured public routes
-router.param('id', validateMongoId('id'));
 router.route('/register').post(
   upload.fields([
     {
