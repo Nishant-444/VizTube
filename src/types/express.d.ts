@@ -1,28 +1,13 @@
-import { Document } from 'mongoose';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Document & {
-        _id: string;
-        username: string;
-        email: string;
-        fullname: string;
-        avatar: string;
-        coverImage: string;
-        watchHistory: string[];
-      };
-    }
-  }
-}
-
 import { User } from '@prisma/client';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: User; // Add user to Request interface
+      // This tells TS: "req.user" is exactly the User model from Prisma schema
+      user?: User;
     }
   }
 }
+
+// This export is necessary to make this file a "module"
 export {};
