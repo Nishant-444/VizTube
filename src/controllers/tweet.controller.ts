@@ -1,30 +1,22 @@
-import mongoose, { isValidObjectId } from 'mongoose';
-import { Tweet } from '../models/tweet.model.js';
-import { User } from '../models/user.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { paginationOptions } from '../config/paginationOptions.js';
+import prisma from '../lib/prisma.js';
 
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
-  }
-  const userId = req.user._id;
+  const userId = req.user.id;
 
   if (!content || content.trim() === '') {
     throw new ApiError(400, 'Tweet content cannot be empty.');
   }
 
-  const tweet = await Tweet.create({
-    content,
-    owner: userId,
+  const tweet = await prisma.tweet.create({
+    data: {
+      content: content,
+      userId: userId,
+    },
   });
-
-  if (!tweet) {
-    throw new ApiError(500, 'Something went wrong while creating the tweet');
-  }
 
   return res
     .status(201)
@@ -33,88 +25,80 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userIdInt = parseInt(userId);
+  if (isNaN(userIdInt)) throw new ApiError(400, 'Invalid user ID');
 
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-
-  const pipeline: any[] = [];
-
-  pipeline.push(
-    {
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId),
+  const tweets = await prisma.tweet.findMany({
+    where: {
+      userId: userIdInt,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    include: {
+      _count: {
+        select: { likes: true },
       },
     },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    }
-  );
-
-  const tweetAggregate = Tweet.aggregate(pipeline);
-  const results = await Tweet.aggregatePaginate(
-    tweetAggregate,
-    paginationOptions
-  );
+  });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, results, 'Tweets fetched successfully'));
+    .json(new ApiResponse(200, tweets, 'Tweets fetched successfully'));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
   const { content } = req.body;
+  const userId = req.user.id;
+
+  const tweetIdInt = parseInt(tweetId);
+  if (isNaN(tweetIdInt)) throw new ApiError(400, 'Invalid tweet ID');
+
   if (!content || content.trim() === '') {
-    throw new ApiError(400, 'Tweet content cannot be empty.');
+    throw new ApiError(400, 'Content cannot be empty');
   }
 
-  const { tweetId } = req.params;
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
-  }
-  const updatedTweet = await Tweet.findOneAndUpdate(
-    {
-      _id: tweetId,
-      owner: req.user._id,
-    },
-    {
-      $set: {
+  try {
+    const updatedTweet = await prisma.tweet.update({
+      where: {
+        id: tweetIdInt,
+        userId: userId,
+      },
+      data: {
         content: content,
       },
-    },
-    { new: true }
-  );
+    });
 
-  if (!updatedTweet) {
-    throw new ApiError(404, 'Tweet not found or you are not authorized');
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedTweet, 'Tweet updated successfully'));
+  } catch (error) {
+    throw new ApiError(403, 'Tweet not found or unauthorized');
   }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedTweet, 'Tweet updated successfully'));
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  if (!req.user?._id) {
-    throw new ApiError(401, 'Unauthorized - no user in request');
+  const userId = req.user.id;
+
+  const tweetIdInt = parseInt(tweetId);
+  if (isNaN(tweetIdInt)) throw new ApiError(400, 'Invalid tweet ID');
+
+  try {
+    await prisma.tweet.delete({
+      where: {
+        id: tweetIdInt,
+        userId: userId,
+      },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, 'Tweet deleted successfully'));
+  } catch (error) {
+    throw new ApiError(403, 'Tweet not found or unauthorized');
   }
-
-  const deletedTweet = await Tweet.findOneAndDelete({
-    _id: tweetId,
-    owner: req.user._id,
-  });
-
-  if (!deletedTweet) {
-    throw new ApiError(404, 'Tweet not found or you are not authorized');
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, 'Tweet deleted successfully'));
 });
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };
