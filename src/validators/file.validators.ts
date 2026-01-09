@@ -51,12 +51,15 @@ export const validateAvatarFile = (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.file) {
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const avatarFile = files?.avatar?.[0];
+
+  if (!avatarFile) {
     throw new ApiError(400, 'Avatar file is required for update');
   }
 
   // check integrity
-  validateFile(req.file, 'Avatar');
+  validateFile(avatarFile, 'Avatar');
 
   next();
 };
@@ -67,12 +70,14 @@ export const validateCoverImageFile = (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.file) {
-    throw new ApiError(400, 'Cover image file is required for update');
-  }
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const coverImageFile = files?.coverImage?.[0];
 
+  if (!coverImageFile) {
+    throw new ApiError(400, 'Cover Image file is required for update');
+  }
   // check integrity
-  validateFile(req.file, 'Cover Image');
+  validateFile(coverImageFile, 'Cover Image');
 
   next();
 };

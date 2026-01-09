@@ -1,9 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
-import dotenv from 'dotenv';
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
+import 'dotenv/config';
 
-dotenv.config();
 // configure cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -22,7 +21,7 @@ const uploadOnCloudinary = async (
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: 'auto',
     });
-    console.log('CLOUDINARY RESPONSE:', JSON.stringify(response, null, 2));
+    // console.log(JSON.stringify(response, null, 2));
 
     console.log(
       'File uploaded successfully on cloudinary. File src: ' + response.url
