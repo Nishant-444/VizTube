@@ -19,7 +19,7 @@ The collection includes pre-configured variables:
 
 | Variable       | Description              | Default Value                         |
 | -------------- | ------------------------ | ------------------------------------- |
-| `baseUrl`      | API Base URL             | `https://viztube.onrender.com/api/v1` |
+| `baseUrl`      | API Base URL             | `https://viztube.onrender.com/api/v2` |
 | `accessToken`  | JWT Access Token         | Auto-populated on login               |
 | `refreshToken` | JWT Refresh Token        | Auto-populated on login               |
 | `userId`       | Current User ID          | Auto-populated on login               |
@@ -265,8 +265,8 @@ To use with deployed API:
 1. Click on collection name
 2. Go to "Variables" tab
 3. Update `baseUrl` value:
-   - Local: `http://localhost:8000/api/v1`
-   - Production: `https://viztube.onrender.com/api/v1`
+   - Local: `http://localhost:8000/api/v2`
+   - Production: `https://viztube.onrender.com/api/v2`
 
 ### Add Custom Headers
 

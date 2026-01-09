@@ -1,102 +1,62 @@
-# VizTube API Documentation
+# VizTube API Guide
 
-Complete API reference for the VizTube backend platform.
+Hey! This guide will help you understand how to use the VizTube API.
 
-**Base URL**: `http://localhost:8000/api/v1`  
-**Version**: 1.0.0  
-**Last Updated**: January 2026
+All API calls start with: `http://localhost:8000/api/v2`
 
 ---
 
-## Table of Contents
+## How Authentication Works
 
-1. [Authentication](#authentication)
-2. [Response Format](#response-format)
-3. [Error Codes](#error-codes)
-4. [Endpoints](#endpoints)
-   - [Health Check](#health-check)
-   - [User Management](#user-management)
-   - [Video Management](#video-management)
-   - [Comments](#comments)
-   - [Likes](#likes)
-   - [Subscriptions](#subscriptions)
-   - [Playlists](#playlists)
-   - [Tweets](#tweets)
-   - [Dashboard](#dashboard)
+When you login, you get two tokens:
+
+- **Access Token** - This expires in 15 minutes. Use it to make API requests.
+- **Refresh Token** - This lasts 7 days. Use it to get a new access token when the old one expires.
+
+Both tokens are saved in cookies automatically, so you don't have to worry about managing them manually.
+
+Some routes need you to be logged in. If you see a lock icon next to an endpoint, that means you need to be authenticated.
 
 ---
 
-## Authentication
+## What API Responses Look Like
 
-VizTube uses **JWT (JSON Web Tokens)** for authentication with two types of tokens:
-
-- **Access Token**: Short-lived (15 minutes), used for API requests
-- **Refresh Token**: Long-lived (7 days), used to obtain new access tokens
-
-### Token Storage
-
-Tokens are stored in **HTTP-only cookies**:
-
-- `accessToken` - Used for authenticating API requests
-- `refreshToken` - Used for refreshing the access token
-
-### Protected Routes
-
-Routes marked with  require authentication. Include the access token in cookies or Authorization header:
-
-```
-Authorization: Bearer <access_token>
-```
-
----
-
-## Response Format
-
-All API responses follow a consistent format:
-
-### Success Response
+When things go well:
 
 ```json
 {
   "statusCode": 200,
-  "data": {
-    // Response data here
-  },
-  "message": "Success message",
+  "data": { "username": "john", "email": "john@example.com" },
+  "message": "User fetched successfully",
   "success": true
 }
 ```
 
-### Error Response
+When something goes wrong:
 
 ```json
 {
   "statusCode": 400,
   "data": null,
-  "message": "Error message",
+  "message": "Username is required",
   "success": false,
   "errors": []
 }
 ```
 
----
+### Common Status Codes
 
-## Error Codes
-
-| Status Code | Description                             |
-| ----------- | --------------------------------------- |
-| 200         | Success                                 |
-| 201         | Created                                 |
-| 400         | Bad Request - Invalid input             |
-| 401         | Unauthorized - Invalid or missing token |
-| 403         | Forbidden - Insufficient permissions    |
-| 404         | Not Found - Resource doesn't exist      |
-| 409         | Conflict - Resource already exists      |
-| 500         | Internal Server Error                   |
+- **200** - Everything worked
+- **201** - New resource created
+- **400** - You sent something invalid
+- **401** - You need to login
+- **403** - You don't have permission
+- **404** - Resource not found
+- **500** - Something broke on our end
 
 ---
 
-## Endpoints
+## API Endpoints
 
 ### Health Check
 
@@ -108,7 +68,7 @@ GET /healthcheck
 
 **Description**: Verify that the API server is running.
 
-**Auth Required**:  No
+**Auth Required**: No
 
 **Response**:
 
@@ -136,7 +96,7 @@ POST /user/register
 
 **Description**: Register a new user account with avatar and cover image.
 
-**Auth Required**:  No
+**Auth Required**: No
 
 **Content-Type**: `multipart/form-data`
 
@@ -153,7 +113,7 @@ POST /user/register
 **Example**:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/user/register \
+curl -X POST http://localhost:8000/api/v2/user/register \
   -F "username=johndoe" \
   -F "email=john@example.com" \
   -F "fullname=John Doe" \
@@ -192,7 +152,7 @@ POST /user/login
 
 **Description**: Authenticate user and receive JWT tokens.
 
-**Auth Required**:  No
+**Auth Required**: No
 
 **Content-Type**: `application/json`
 
@@ -239,7 +199,7 @@ POST /user/refresh-token
 
 **Description**: Get a new access token using refresh token.
 
-**Auth Required**:  No (but requires refresh token in cookies)
+**Auth Required**: No (but requires refresh token in cookies)
 
 **Response**:
 
@@ -265,7 +225,7 @@ POST /user/logout
 
 **Description**: Logout user and clear tokens.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -288,7 +248,7 @@ POST /user/change-password
 
 **Description**: Change user password (requires current password).
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -320,7 +280,7 @@ GET /user/current-user-details
 
 **Description**: Get logged-in user details.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -351,7 +311,7 @@ GET /user/c/:username
 
 **Description**: Get user channel profile with subscriber and subscription counts.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **URL Parameters**:
 | Parameter | Type | Description |
@@ -388,7 +348,7 @@ PATCH /user/update-account
 
 **Description**: Update user's fullname and email.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -425,7 +385,7 @@ PATCH /user/update-avatar
 
 **Description**: Update user's profile picture.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Content-Type**: `multipart/form-data`
 
@@ -457,7 +417,7 @@ PATCH /user/update-cover-image
 
 **Description**: Update user's cover photo.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Content-Type**: `multipart/form-data`
 
@@ -489,7 +449,7 @@ GET /user/watch-history
 
 **Description**: Get user's watch history with video details.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -531,7 +491,7 @@ GET /videos
 
 **Description**: Get all published videos.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Query Parameters**:
 | Parameter | Type | Default | Description |
@@ -577,7 +537,7 @@ POST /videos
 
 **Description**: Upload a new video with thumbnail.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Content-Type**: `multipart/form-data`
 
@@ -619,7 +579,7 @@ GET /videos/:videoId
 
 **Description**: Get video details by ID. Automatically increments view count.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **URL Parameters**:
 | Parameter | Type | Description |
@@ -665,7 +625,7 @@ PATCH /videos/:videoId
 
 **Description**: Update video details (title, description, thumbnail). Only video owner can update.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Content-Type**: `multipart/form-data`
 
@@ -702,7 +662,7 @@ DELETE /videos/:videoId
 
 **Description**: Delete a video. Only video owner can delete.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -725,7 +685,7 @@ PATCH /videos/toggle/publish/:videoId
 
 **Description**: Publish or unpublish a video.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -753,7 +713,7 @@ GET /comments/:videoId
 
 **Description**: Get all comments for a video.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **URL Parameters**:
 | Parameter | Type | Description |
@@ -793,7 +753,7 @@ POST /comments/:videoId
 
 **Description**: Add a comment to a video.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -830,7 +790,7 @@ PATCH /comments/c/:commentId
 
 **Description**: Update a comment. Only comment owner can update.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -864,7 +824,7 @@ DELETE /comments/c/:commentId
 
 **Description**: Delete a comment. Only comment owner can delete.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -889,7 +849,7 @@ POST /likes/toggle/v/:videoId
 
 **Description**: Like or unlike a video.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -914,7 +874,7 @@ POST /likes/toggle/c/:commentId
 
 **Description**: Like or unlike a comment.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -939,7 +899,7 @@ POST /likes/toggle/t/:tweetId
 
 **Description**: Like or unlike a tweet.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -964,7 +924,7 @@ GET /likes/videos
 
 **Description**: Get all videos liked by the current user.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1001,7 +961,7 @@ POST /subscriptions/c/:channelId
 
 **Description**: Subscribe or unsubscribe to a channel.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **URL Parameters**:
 | Parameter | Type | Description |
@@ -1031,7 +991,7 @@ GET /subscriptions/c/:channelId
 
 **Description**: Get all subscribers of a channel.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1065,7 +1025,7 @@ GET /subscriptions/u/:subscriberId
 
 **Description**: Get all channels a user is subscribed to.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1101,7 +1061,7 @@ POST /playlist
 
 **Description**: Create a new playlist.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -1139,7 +1099,7 @@ GET /playlist/user/:userId
 
 **Description**: Get all playlists created by a user.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1170,7 +1130,7 @@ GET /playlist/:playlistId
 
 **Description**: Get playlist details with all videos.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1211,7 +1171,7 @@ PATCH /playlist/:playlistId
 
 **Description**: Update playlist name and description. Only owner can update.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -1247,7 +1207,7 @@ DELETE /playlist/:playlistId
 
 **Description**: Delete a playlist. Only owner can delete.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1270,7 +1230,7 @@ POST /playlist/:playlistId/:videoId
 
 **Description**: Add a video to a playlist.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1297,7 +1257,7 @@ DELETE /playlist/:playlistId/:videoId
 
 **Description**: Remove a video from a playlist.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1322,7 +1282,7 @@ POST /tweets
 
 **Description**: Create a new tweet/community post.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -1358,7 +1318,7 @@ GET /tweets/user/:userId
 
 **Description**: Get all tweets by a user.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1392,7 +1352,7 @@ PATCH /tweets/:tweetId
 
 **Description**: Update a tweet. Only tweet owner can update.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Request Body**:
 
@@ -1426,7 +1386,7 @@ DELETE /tweets/:tweetId
 
 **Description**: Delete a tweet. Only tweet owner can delete.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1451,7 +1411,7 @@ GET /dashboard/stats
 
 **Description**: Get channel analytics (views, subscribers, videos, likes).
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1479,7 +1439,7 @@ GET /dashboard/videos
 
 **Description**: Get all videos uploaded by the current user.
 
-**Auth Required**:  Yes
+**Auth Required**: Yes
 
 **Response**:
 
@@ -1559,5 +1519,5 @@ Import the `Viztube-v2.postman_collection.json` file for pre-configured requests
 ---
 
 **Last Updated**: January 2026  
-**Version**: 1.0.0  
+**Version**: 2.0.0  
 **Maintainer**: Nishant Sharma

@@ -1,102 +1,94 @@
-# Product Requirements Document (PRD)
-
-## VizTube - Video Sharing Platform Backend
+# VizTube - What We're Building
 
 ---
 
-## 1. Executive Summary
+## Quick Info
 
-**Project Name:** VizTube  
+**Project:** VizTube  
 **Version:** 2.0.0  
-**Document Date:** January 9, 2026  
-**Author:** Nishant Sharma  
-**Status:**  Complete & Production Ready
-
-### 1.1 Product Overview
-
-VizTube is a comprehensive, production-ready backend system for a video-sharing platform inspired by YouTube. Built with modern technologies including TypeScript, PostgreSQL, and Prisma ORM, it provides a robust RESTful API for managing users, videos, comments, subscriptions, playlists, and social interactions.
-
-### 1.2 Product Vision
-
-To create a scalable, secure, and feature-rich backend infrastructure that powers a complete video-sharing ecosystem with:
-- Type-safe development with TypeScript
-- Relational database design with PostgreSQL
-- Secure authentication and authorization
-- Cloud-based media storage and delivery
-- Comprehensive social interaction features
-
-### 1.3 Key Differentiators
-
-- **Type Safety**: Full TypeScript implementation with Prisma for end-to-end type safety
-- **Relational Database**: PostgreSQL with proper normalization and relationships
-- **Modern ORM**: Prisma for type-safe database queries and automatic migrations
-- **Scalable Architecture**: Stateless design with JWT and cloud storage
-- **Production Ready**: Complete error handling, validation, and security features
+**Created:** January 2026  
+**By:** Nishant Sharma  
+**Status:** Ready to use!
 
 ---
 
-## 2. Objectives & Goals
+## What is VizTube?
 
-### 2.1 Primary Objectives
+VizTube is a backend system for a video-sharing platform (think YouTube). It's built with modern tech and ready for production.
 
-- Build a production-ready video-sharing platform backend
-- Implement secure JWT-based authentication with refresh tokens
-- Enable seamless video upload, storage, and streaming via Cloudinary
-- Facilitate social interactions (likes, comments, subscriptions, tweets)
-- Provide robust content management and organization
-- Ensure type safety across the entire application
+### What makes it special?
 
-### 2.2 Success Metrics
+- Built with TypeScript so we catch bugs early
+- Uses PostgreSQL database (super reliable)
+- Secure login system with JWT tokens
+- Stores videos and images in the cloud
+- Has all the features you'd expect: likes, comments, subscriptions, playlists
 
-- API response time < 200ms for standard operations
-- Support for concurrent video uploads
-- 99.9% uptime reliability
-- Zero runtime type errors (TypeScript + Prisma)
-- Secure authentication with token refresh mechanism
-- Efficient database queries with proper indexing
+### Why these technologies?
+
+- **TypeScript** - No more surprise errors
+- **PostgreSQL + Prisma** - Database that just works
+- **Cloud Storage** - Videos don't take up server space
+- **JWT Auth** - Users stay logged in securely
+- **Full Features** - Everything you need is already built
 
 ---
 
-## 3. Technical Architecture
+## What We Want to Achieve
 
-### 3.1 Technology Stack
+### Goals
 
-#### Backend Framework
+- Build something that actually works in production
+- Make sure logging in is secure
+- Let users upload and watch videos smoothly
+- Allow people to interact (like, comment, subscribe)
+- Keep content organized with playlists
+- Make sure everything is type-safe
 
-- **Runtime:** Node.js v18+ (ES Modules)
-- **Framework:** Express.js v5.1.0
-- **Language:** TypeScript v5.9.3 with strict mode
+### How We Measure Success
 
-#### Database
+- API responds quickly (under 200ms)
+- Multiple users can upload videos at the same time
+- System stays up 99.9% of the time
+- No runtime errors thanks to TypeScript
+- Secure authentication that refreshes automatically
+- Database queries are fast
 
-- **Primary Database:** PostgreSQL (Relational Database)
-- **ORM:** Prisma v7.2.0
-  - Type-safe database client
-  - Declarative migrations
-  - Auto-generated TypeScript types
+---
 
-#### Authentication & Security
+## Technical Details
 
-- **Authentication:** JWT (JSON Web Tokens) v9.0.2
-- **Password Hashing:** Bcrypt v6.0.0 (10 salt rounds)
-- **Token Types:**
-  - Access Token (15 minutes, short-lived)
-  - Refresh Token (7 days, long-lived)
-- **Storage:** HTTP-only cookies + response body
+### What We're Using
 
-#### File Storage & Processing
+**Backend:**
 
-- **Cloud Storage:** Cloudinary v2.8.0
-- **File Upload:** Multer v2.0.2
-- **Media Types:** Videos, Images (avatars, thumbnails, cover images)
-- **Validation:** File size and type validation
+- Node.js v18+ (runs the server)
+- Express.js v5.1.0 (handles requests)
+- TypeScript v5.9.3 (keeps code safe)
 
-#### Additional Libraries
+**Database:**
 
-- **CORS:** Cross-Origin Resource Sharing
-- **Cookie Parser:** Secure cookie handling
-- **Dotenv:** Environment variable management
-- **ESLint & Prettier:** Code quality and formatting
+- PostgreSQL (stores everything)
+- Prisma v7.2.0 (talks to the database)
+
+**Security:**
+
+- JWT tokens for logging in
+- Bcrypt to hash passwords
+- Access token lasts 15 minutes
+- Refresh token lasts 7 days
+
+**File Storage:**
+
+- Cloudinary (stores videos and images)
+- Multer (handles file uploads)
+- We check file sizes and types
+
+**Other Stuff:**
+
+- CORS (allows cross-origin requests)
+- Cookie Parser (handles cookies securely)
+- Environment variables for configuration
 
 ### 3.2 System Architecture
 
@@ -190,6 +182,7 @@ model User {
 ```
 
 **Key Features:**
+
 - Unique username and email with indexes
 - Default avatar and cover images
 - Refresh token storage for JWT authentication
@@ -227,6 +220,7 @@ model Video {
 ```
 
 **Key Features:**
+
 - Stores Cloudinary URLs and public IDs for cleanup
 - View count tracking
 - Publish/unpublish toggle
@@ -255,6 +249,7 @@ model Comment {
 ```
 
 **Key Features:**
+
 - Nested comments on videos
 - Likes on comments
 - Cascading delete with user and video
@@ -285,6 +280,7 @@ model Like {
 ```
 
 **Key Features:**
+
 - Polymorphic design (can like videos, comments, or tweets)
 - Unique constraints prevent duplicate likes
 - Toggle functionality (add/remove like)
@@ -308,6 +304,7 @@ model Subscription {
 ```
 
 **Key Features:**
+
 - Many-to-many user relationship
 - Unique constraint prevents duplicate subscriptions
 - Indexed for efficient subscriber/channel queries
@@ -343,6 +340,7 @@ model PlaylistVideo {
 ```
 
 **Key Features:**
+
 - Many-to-many relationship between playlists and videos
 - Junction table for video ordering
 - Prevents duplicate videos in same playlist
@@ -365,6 +363,7 @@ model Tweet {
 ```
 
 **Key Features:**
+
 - Community posts/status updates
 - Likeable content
 - User-owned tweets
@@ -387,6 +386,7 @@ model WatchHistory {
 ```
 
 **Key Features:**
+
 - Tracks user video viewing
 - Unique constraint (one record per user-video pair)
 - Automatic timestamp tracking
@@ -398,8 +398,8 @@ model WatchHistory {
 ### 5.1 Base URL Structure
 
 ```
-Production: https://yourdomain.com/api/v1
-Development: http://localhost:8000/api/v1
+Production: https://yourdomain.com/api/v2
+Development: http://localhost:8000/api/v2
 ```
 
 ### 5.2 Authentication & User Management (11 endpoints)
@@ -407,6 +407,7 @@ Development: http://localhost:8000/api/v1
 #### Public Endpoints (No Authentication)
 
 **POST /user/register**
+
 - Register new user with avatar and cover image
 - Required: username, email, fullname, password, avatar
 - Optional: coverImage
@@ -414,11 +415,13 @@ Development: http://localhost:8000/api/v1
 - Response: User object + JWT tokens
 
 **POST /user/login**
+
 - Authenticate user credentials
 - Required: email, password
 - Response: User object + JWT tokens (cookies + body)
 
 **POST /user/refresh-token**
+
 - Obtain new access token using refresh token
 - Required: Refresh token (from cookie or body)
 - Response: New access + refresh tokens
@@ -426,36 +429,44 @@ Development: http://localhost:8000/api/v1
 #### Protected Endpoints (JWT Required)
 
 **POST /user/logout**
+
 - Logout and invalidate refresh token
 - Clears HTTP-only cookies
 
 **POST /user/change-password**
+
 - Update user password
 - Required: oldPassword, newPassword
 - Validates current password before change
 
 **GET /user/current-user-details**
+
 - Get authenticated user's profile information
 
 **GET /user/c/:username**
+
 - Get channel profile with statistics
 - Returns: subscriber count, subscription count, isSubscribed status
 
 **PATCH /user/update-account**
+
 - Update fullname and email
 - Required: At least one field to update
 
 **PATCH /user/update-avatar**
+
 - Upload new avatar image
 - Content-Type: multipart/form-data
 - Deletes old Cloudinary image
 
 **PATCH /user/update-cover-image**
+
 - Upload new cover photo
 - Content-Type: multipart/form-data
 - Deletes old Cloudinary image
 
 **GET /user/watch-history**
+
 - Get user's watch history with video details
 - Returns: Array of videos with user info
 
@@ -463,34 +474,40 @@ Development: http://localhost:8000/api/v1
 
 ### 5.3 Video Management (6 endpoints)
 
-**GET /videos** 
+**GET /videos**
+
 - Get all published videos
 - Query params: page, limit (pagination)
 - Returns: Array of videos with owner info
 
-**POST /videos** 
+**POST /videos**
+
 - Upload new video with thumbnail
 - Required: videoFile, thumbnail, title
 - Optional: description
 - Content-Type: multipart/form-data
 - Automatically extracts video duration
 
-**GET /videos/:videoId** 
+**GET /videos/:videoId**
+
 - Get video details by ID
 - Automatically increments view count
 - Returns: Video with owner, likes count, comments count
 
-**PATCH /videos/:videoId** 
+**PATCH /videos/:videoId**
+
 - Update video details (owner only)
 - Optional: title, description, thumbnail
 - Content-Type: multipart/form-data (if thumbnail)
 
-**DELETE /videos/:videoId** 
+**DELETE /videos/:videoId**
+
 - Delete video (owner only)
 - Removes files from Cloudinary
 - Cascades to delete comments, likes, etc.
 
-**PATCH /videos/toggle/publish/:videoId** 
+**PATCH /videos/toggle/publish/:videoId**
+
 - Toggle video publish status (owner only)
 - Toggles between published/unpublished
 
@@ -498,38 +515,46 @@ Development: http://localhost:8000/api/v1
 
 ### 5.4 Comment Management (4 endpoints)
 
-**GET /comments/:videoId** 
+**GET /comments/:videoId**
+
 - Get all comments for a video
 - Returns: Comments with user info and like count
 
-**POST /comments/:videoId** 
+**POST /comments/:videoId**
+
 - Add comment to video
 - Required: content
 
-**PATCH /comments/c/:commentId** 
+**PATCH /comments/c/:commentId**
+
 - Update comment content (owner only)
 - Required: content
 
-**DELETE /comments/c/:commentId** 
+**DELETE /comments/c/:commentId**
+
 - Delete comment (owner only)
 
 ---
 
 ### 5.5 Like System (4 endpoints)
 
-**POST /likes/toggle/v/:videoId** 
+**POST /likes/toggle/v/:videoId**
+
 - Toggle like on video
 - Returns: { liked: boolean }
 
-**POST /likes/toggle/c/:commentId** 
+**POST /likes/toggle/c/:commentId**
+
 - Toggle like on comment
 - Returns: { liked: boolean }
 
-**POST /likes/toggle/t/:tweetId** 
+**POST /likes/toggle/t/:tweetId**
+
 - Toggle like on tweet
 - Returns: { liked: boolean }
 
-**GET /likes/videos** 
+**GET /likes/videos**
+
 - Get all videos liked by current user
 - Returns: Array of liked videos with details
 
@@ -537,15 +562,18 @@ Development: http://localhost:8000/api/v1
 
 ### 5.6 Subscription Management (3 endpoints)
 
-**POST /subscriptions/c/:channelId** 
+**POST /subscriptions/c/:channelId**
+
 - Subscribe/unsubscribe to channel
 - Returns: { subscribed: boolean }
 
-**GET /subscriptions/c/:channelId** 
+**GET /subscriptions/c/:channelId**
+
 - Get channel's subscribers list
 - Returns: Subscribers array with count
 
-**GET /subscriptions/u/:subscriberId** 
+**GET /subscriptions/u/:subscriberId**
+
 - Get user's subscribed channels
 - Returns: Subscriptions array with count
 
@@ -553,59 +581,72 @@ Development: http://localhost:8000/api/v1
 
 ### 5.7 Playlist Management (7 endpoints)
 
-**POST /playlist** 
+**POST /playlist**
+
 - Create new playlist
 - Required: name, description
 
-**GET /playlist/user/:userId** 
+**GET /playlist/user/:userId**
+
 - Get all playlists for a user
 - Returns: Playlists with video count
 
-**GET /playlist/:playlistId** 
+**GET /playlist/:playlistId**
+
 - Get playlist details with videos
 - Returns: Playlist with video array
 
-**PATCH /playlist/:playlistId** 
+**PATCH /playlist/:playlistId**
+
 - Update playlist (owner only)
 - Optional: name, description
 
-**DELETE /playlist/:playlistId** 
+**DELETE /playlist/:playlistId**
+
 - Delete playlist (owner only)
 
-**POST /playlist/:playlistId/:videoId** 
+**POST /playlist/:playlistId/:videoId**
+
 - Add video to playlist (owner only)
 
-**DELETE /playlist/:playlistId/:videoId** 
+**DELETE /playlist/:playlistId/:videoId**
+
 - Remove video from playlist (owner only)
 
 ---
 
 ### 5.8 Tweet Management (4 endpoints)
 
-**POST /tweets** 
+**POST /tweets**
+
 - Create new tweet/post
 - Required: content
 
-**GET /tweets/user/:userId** 
+**GET /tweets/user/:userId**
+
 - Get all tweets by user
 - Returns: Tweets with user info and likes
 
-**PATCH /tweets/:tweetId** 
+**PATCH /tweets/:tweetId**
+
 - Update tweet (owner only)
 - Required: content
 
-**DELETE /tweets/:tweetId** 
+**DELETE /tweets/:tweetId**
+
 - Delete tweet (owner only)
 
 ---
 
 ### 5.9 Dashboard Analytics (2 endpoints)
 
-**GET /dashboard/stats** 
+**GET /dashboard/stats**
+
 - Get channel statistics
 - Returns: totalVideos, totalViews, totalSubscribers, totalLikes
 
-**GET /dashboard/videos** 
+**GET /dashboard/videos**
+
 - Get all videos uploaded by current user
 - Returns: Array of user's videos with stats
 
@@ -614,6 +655,7 @@ Development: http://localhost:8000/api/v1
 ### 5.10 Health Check (1 endpoint)
 
 **GET /healthcheck**
+
 - Check API server status
 - No authentication required
 - Returns: { status: "OK", message: "Server is running" }
@@ -768,7 +810,9 @@ npm start
 ```json
 {
   "statusCode": 200,
-  "data": { /* response data */ },
+  "data": {
+    /* response data */
+  },
   "message": "Success message",
   "success": true
 }
@@ -963,4 +1007,4 @@ GitHub → Actions → Build → Test → Deploy → Production
 
 **Document Version:** 2.0.0  
 **Last Updated:** January 9, 2026  
-**Status:**  Complete & Production Ready
+**Status:** Complete & Production Ready

@@ -1,162 +1,123 @@
-# VizTube System Architecture
+# How VizTube Works
 
-Comprehensive system architecture documentation for the VizTube video-sharing platform backend.
-
-**Version**: 1.0.0  
-**Last Updated**: January 2026
+This document explains how everything fits together in the VizTube backend.
 
 ---
 
-## Table of Contents
+## The Big Picture
 
-1. [Overview](#overview)
-2. [Technology Stack](#technology-stack)
-3. [System Architecture](#system-architecture)
-4. [Database Design](#database-design)
-5. [Application Structure](#application-structure)
-6. [Authentication Flow](#authentication-flow)
-7. [File Upload Flow](#file-upload-flow)
-8. [API Request Flow](#api-request-flow)
-9. [Security Architecture](#security-architecture)
-10. [Deployment Architecture](#deployment-architecture)
+VizTube is built with these technologies:
 
----
+- **TypeScript** - Makes sure our code doesn't have silly bugs
+- **Node.js + Express** - Runs the server
+- **PostgreSQL** - Stores all our data (users, videos, comments, etc.)
+- **Prisma** - Talks to the database in a safe way
+- **Cloudinary** - Stores videos and images in the cloud
+- **JWT** - Keeps users logged in securely
 
-## Overview
+### How We Built It
 
-VizTube is a modern, scalable backend system for a video-sharing platform built with:
+We followed some simple principles:
 
-- **TypeScript** for type safety
-- **Node.js** and **Express** for the server runtime
-- **PostgreSQL** with **Prisma ORM** for data persistence
-- **Cloudinary** for media storage and delivery
-- **JWT** for stateless authentication
-
-### Design Principles
-
-1. **Separation of Concerns**: Clear boundaries between routes, controllers, services, and data access
-2. **Type Safety**: Full TypeScript implementation with strict mode
-3. **Scalability**: Stateless design, cloud storage, efficient database indexing
-4. **Security**: Input validation, authentication, authorization, secure file handling
-5. **Maintainability**: Modular code, consistent naming, comprehensive error handling
+1. **Keep things organized** - Routes, controllers, and database stuff are all separate
+2. **Stay safe** - TypeScript catches errors before they happen
+3. **Think big** - The app can handle lots of users
+4. **Lock it down** - Check everything users send us
+5. **Keep it clean** - Code is easy to read and understand
 
 ---
 
-## Technology Stack
+## What's Inside
 
-### Backend Runtime
+### Backend Stack
 
-```
-Node.js v18+ (JavaScript Runtime)
-└── TypeScript v5.9.3 (Type Safety)
-    └── Express v5.1.0 (Web Framework)
-```
+- Node.js v18+ runs everything
+- TypeScript makes sure types are correct
+- Express handles HTTP requests
 
-### Database Layer
+### Database
 
-```
-PostgreSQL (Relational Database)
-└── Prisma v7.2.0 (ORM & Query Builder)
-    ├── Type-safe queries
-    ├── Migration system
-    └── Schema management
-```
+- PostgreSQL stores our data
+- Prisma makes database queries safe and easy
+- Automatic migrations when we change the database structure
 
 ### Authentication
 
-```
-JWT (jsonwebtoken v9.0.2)
-├── Access Token (15 min)
-└── Refresh Token (7 days)
+- JWT tokens keep users logged in
+- Access token lasts 15 minutes
+- Refresh token lasts 7 days
+- Passwords are hashed with Bcrypt (super secure)
 
-Bcrypt v6.0.0 (Password Hashing)
-└── 10 salt rounds
-```
+### File Storage
 
-### File Management
-
-```
-Cloudinary v2.8.0 (Cloud Storage)
-└── Videos
-└── Images (avatars, thumbnails, covers)
-
-Multer v2.0.2 (Upload Middleware)
-└── Multipart form-data parsing
-└── File validation
-```
-
-### Supporting Libraries
-
-- **CORS**: Cross-origin resource sharing
-- **Cookie Parser**: Secure cookie handling
-- **Dotenv**: Environment configuration
+- Cloudinary stores videos and images
+- Multer handles file uploads
+- We check file types and sizes
 
 ---
 
-## System Architecture
+## How It's Organized
 
-### High-Level Architecture
-
-```
 ┌─────────────────┐
-│  Client Apps    │
-│ (Web, Mobile)   │
+│ Client Apps │
+│ (Web, Mobile) │
 └────────┬────────┘
-         │ HTTPS/HTTP
-         ▼
+│ HTTPS/HTTP
+▼
 ┌─────────────────────────────────────┐
-│         Express.js Server           │
-│  ┌─────────────────────────────┐   │
-│  │   Middleware Pipeline       │   │
-│  │  • CORS                     │   │
-│  │  • Cookie Parser            │   │
-│  │  • JSON Body Parser         │   │
-│  │  • Static File Serving      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   Authentication Middleware │   │
-│  │  • JWT Verification         │   │
-│  │  • Token Validation         │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │        Router Layer         │   │
-│  │  • User Routes              │   │
-│  │  • Video Routes             │   │
-│  │  • Comment Routes           │   │
-│  │  • Like Routes              │   │
-│  │  • Subscription Routes      │   │
-│  │  • Playlist Routes          │   │
-│  │  • Tweet Routes             │   │
-│  │  • Dashboard Routes         │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │     Controller Layer        │   │
-│  │  • Business Logic           │   │
-│  │  • Request Validation       │   │
-│  │  • Response Formatting      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │     Error Handler           │   │
-│  │  • Global Error Catching    │   │
-│  │  • Standardized Responses   │   │
-│  └─────────────────────────────┘   │
+│ Express.js Server │
+│ ┌─────────────────────────────┐ │
+│ │ Middleware Pipeline │ │
+│ │ • CORS │ │
+│ │ • Cookie Parser │ │
+│ │ • JSON Body Parser │ │
+│ │ • Static File Serving │ │
+│ └─────────────────────────────┘ │
+│ │
+│ ┌─────────────────────────────┐ │
+│ │ Authentication Middleware │ │
+│ │ • JWT Verification │ │
+│ │ • Token Validation │ │
+│ └─────────────────────────────┘ │
+│ │
+│ ┌─────────────────────────────┐ │
+│ │ Router Layer │ │
+│ │ • User Routes │ │
+│ │ • Video Routes │ │
+│ │ • Comment Routes │ │
+│ │ • Like Routes │ │
+│ │ • Subscription Routes │ │
+│ │ • Playlist Routes │ │
+│ │ • Tweet Routes │ │
+│ │ • Dashboard Routes │ │
+│ └─────────────────────────────┘ │
+│ │
+│ ┌─────────────────────────────┐ │
+│ │ Controller Layer │ │
+│ │ • Business Logic │ │
+│ │ • Request Validation │ │
+│ │ • Response Formatting │ │
+│ └─────────────────────────────┘ │
+│ │
+│ ┌─────────────────────────────┐ │
+│ │ Error Handler │ │
+│ │ • Global Error Catching │ │
+│ │ • Standardized Responses │ │
+│ └─────────────────────────────┘ │
 └─────────────────────────────────────┘
-         │                    │
-         ▼                    ▼
-┌──────────────────┐  ┌──────────────┐
-│   PostgreSQL     │  │  Cloudinary  │
-│   Database       │  │  CDN         │
-│  • User Data     │  │  • Videos    │
-│  • Video Meta    │  │  • Images    │
-│  • Comments      │  │              │
-│  • Likes         │  │              │
-│  • Subscriptions │  │              │
-│  • Playlists     │  │              │
-└──────────────────┘  └──────────────┘
+│ │
+▼ ▼
+┌──────────────────┐ ┌──────────────┐
+│ PostgreSQL │ │ Cloudinary │
+│ Database │ │ CDN │
+│ • User Data │ │ • Videos │
+│ • Video Meta │ │ • Images │
+│ • Comments │ │ │
+│ • Likes │ │ │
+│ • Subscriptions │ │ │
+│ • Playlists │ │ │
+└──────────────────┘ └──────────────┘
+
 ```
 
 ---
@@ -166,94 +127,96 @@ Multer v2.0.2 (Upload Middleware)
 ### Entity-Relationship Diagram
 
 ```
+
 ┌─────────────────────┐
-│       User          │
+│ User │
 │─────────────────────│
-│ id (PK)             │
-│ username (UNIQUE)   │
-│ email (UNIQUE)      │
-│ fullname            │
-│ avatar              │
-│ coverImage          │
-│ password            │
-│ refreshToken        │
-│ createdAt           │
-│ updatedAt           │
+│ id (PK) │
+│ username (UNIQUE) │
+│ email (UNIQUE) │
+│ fullname │
+│ avatar │
+│ coverImage │
+│ password │
+│ refreshToken │
+│ createdAt │
+│ updatedAt │
 └──────────┬──────────┘
-           │
-           │ 1:N
-           ├──────────────────┐
-           │                  │
-           ▼                  ▼
-┌─────────────────┐   ┌──────────────────┐
-│     Video       │   │    Comment       │
-│─────────────────│   │──────────────────│
-│ id (PK)         │   │ id (PK)          │
-│ videoFileUrl    │   │ content          │
-│ thumbnailUrl    │   │ userId (FK)      │
-│ title           │   │ videoId (FK)     │
-│ description     │   │ createdAt        │
-│ views           │   │ updatedAt        │
-│ duration        │   └──────────────────┘
-│ isPublished     │
-│ userId (FK)     │
-│ createdAt       │
+│
+│ 1:N
+├──────────────────┐
+│ │
+▼ ▼
+┌─────────────────┐ ┌──────────────────┐
+│ Video │ │ Comment │
+│─────────────────│ │──────────────────│
+│ id (PK) │ │ id (PK) │
+│ videoFileUrl │ │ content │
+│ thumbnailUrl │ │ userId (FK) │
+│ title │ │ videoId (FK) │
+│ description │ │ createdAt │
+│ views │ │ updatedAt │
+│ duration │ └──────────────────┘
+│ isPublished │
+│ userId (FK) │
+│ createdAt │
 └────────┬────────┘
-         │
-         │ 1:N
-         ├─────────────────────┐
-         │                     │
-         ▼                     ▼
-┌──────────────────┐   ┌──────────────────┐
-│   Like           │   │  WatchHistory    │
-│──────────────────│   │──────────────────│
-│ id (PK)          │   │ id (PK)          │
-│ userId (FK)      │   │ userId (FK)      │
-│ videoId (FK)     │   │ videoId (FK)     │
-│ commentId (FK)   │   │ watchedAt        │
-│ tweetId (FK)     │   └──────────────────┘
-│ createdAt        │
+│
+│ 1:N
+├─────────────────────┐
+│ │
+▼ ▼
+┌──────────────────┐ ┌──────────────────┐
+│ Like │ │ WatchHistory │
+│──────────────────│ │──────────────────│
+│ id (PK) │ │ id (PK) │
+│ userId (FK) │ │ userId (FK) │
+│ videoId (FK) │ │ videoId (FK) │
+│ commentId (FK) │ │ watchedAt │
+│ tweetId (FK) │ └──────────────────┘
+│ createdAt │
 └──────────────────┘
 
 ┌─────────────────────┐
-│   Subscription      │
+│ Subscription │
 │─────────────────────│
-│ id (PK)             │
-│ subscriberId (FK)   │──┐
-│ channelId (FK)      │  │ Both FK to User
-│ createdAt           │  │
+│ id (PK) │
+│ subscriberId (FK) │──┐
+│ channelId (FK) │ │ Both FK to User
+│ createdAt │ │
 └─────────────────────┘──┘
 
 ┌─────────────────────┐
-│     Playlist        │
+│ Playlist │
 │─────────────────────│
-│ id (PK)             │
-│ name                │
-│ description         │
-│ userId (FK)         │
-│ createdAt           │
+│ id (PK) │
+│ name │
+│ description │
+│ userId (FK) │
+│ createdAt │
 └──────────┬──────────┘
-           │
-           │ M:N via PlaylistVideo
-           ▼
+│
+│ M:N via PlaylistVideo
+▼
 ┌─────────────────────┐
-│   PlaylistVideo     │
+│ PlaylistVideo │
 │─────────────────────│
-│ id (PK)             │
-│ playlistId (FK)     │
-│ videoId (FK)        │
-│ addedAt             │
+│ id (PK) │
+│ playlistId (FK) │
+│ videoId (FK) │
+│ addedAt │
 └─────────────────────┘
 
 ┌─────────────────────┐
-│       Tweet         │
+│ Tweet │
 │─────────────────────│
-│ id (PK)             │
-│ content             │
-│ userId (FK)         │
-│ createdAt           │
-│ updatedAt           │
+│ id (PK) │
+│ content │
+│ userId (FK) │
+│ createdAt │
+│ updatedAt │
 └─────────────────────┘
+
 ```
 
 ### Database Indexes
@@ -283,98 +246,102 @@ Multer v2.0.2 (Upload Middleware)
 ### Layered Architecture
 
 ```
+
 ┌──────────────────────────────────────────┐
-│            Routes Layer                   │
-│  • HTTP method and path mapping          │
-│  • Middleware application                │
-│  • Request routing to controllers        │
+│ Routes Layer │
+│ • HTTP method and path mapping │
+│ • Middleware application │
+│ • Request routing to controllers │
 └──────────────┬───────────────────────────┘
-               │
-               ▼
+│
+▼
 ┌──────────────────────────────────────────┐
-│         Middleware Layer                  │
-│  • Authentication (JWT verification)     │
-│  • File upload (Multer)                  │
-│  • Validation (Input validators)         │
-│  • Parameter normalization               │
+│ Middleware Layer │
+│ • Authentication (JWT verification) │
+│ • File upload (Multer) │
+│ • Validation (Input validators) │
+│ • Parameter normalization │
 └──────────────┬───────────────────────────┘
-               │
-               ▼
+│
+▼
 ┌──────────────────────────────────────────┐
-│         Controller Layer                  │
-│  • Request handling                      │
-│  • Business logic                        │
-│  • Data transformation                   │
-│  • Response formatting                   │
+│ Controller Layer │
+│ • Request handling │
+│ • Business logic │
+│ • Data transformation │
+│ • Response formatting │
 └──────────────┬───────────────────────────┘
-               │
-               ▼
+│
+▼
 ┌──────────────────────────────────────────┐
-│          Data Access Layer                │
-│  • Prisma ORM                            │
-│  • Database queries                      │
-│  • Transaction management                │
+│ Data Access Layer │
+│ • Prisma ORM │
+│ • Database queries │
+│ • Transaction management │
 └──────────────┬───────────────────────────┘
-               │
-               ▼
+│
+▼
 ┌──────────────────────────────────────────┐
-│           Database                        │
-│  • PostgreSQL                            │
-│  • Data persistence                      │
+│ Database │
+│ • PostgreSQL │
+│ • Data persistence │
 └──────────────────────────────────────────┘
+
 ```
 
 ### Directory Structure
 
 ```
+
 src/
-├── index.ts              # Application entry point
-├── app.ts                # Express app configuration
-├── constants.ts          # Application constants
+├── index.ts # Application entry point
+├── app.ts # Express app configuration
+├── constants.ts # Application constants
 │
-├── config/               # Configuration files
-│   └── cookieOptions.ts
+├── config/ # Configuration files
+│ └── cookieOptions.ts
 │
-├── controllers/          # Request handlers (business logic)
-│   ├── user.controller.ts
-│   ├── video.controller.ts
-│   ├── comment.controller.ts
-│   ├── like.controller.ts
-│   ├── subscription.controller.ts
-│   ├── playlist.controller.ts
-│   ├── tweet.controller.ts
-│   ├── dashboard.controller.ts
-│   └── healthcheck.controller.ts
+├── controllers/ # Request handlers (business logic)
+│ ├── user.controller.ts
+│ ├── video.controller.ts
+│ ├── comment.controller.ts
+│ ├── like.controller.ts
+│ ├── subscription.controller.ts
+│ ├── playlist.controller.ts
+│ ├── tweet.controller.ts
+│ ├── dashboard.controller.ts
+│ └── healthcheck.controller.ts
 │
-├── routes/               # API route definitions
-│   ├── user.routes.ts
-│   ├── video.routes.ts
-│   └── ... (other routes)
+├── routes/ # API route definitions
+│ ├── user.routes.ts
+│ ├── video.routes.ts
+│ └── ... (other routes)
 │
-├── middlewares/          # Request processing middleware
-│   ├── auth.middleware.ts
-│   ├── error.middleware.ts
-│   ├── multer.middleware.ts
-│   └── normalizeParams.middleware.ts
+├── middlewares/ # Request processing middleware
+│ ├── auth.middleware.ts
+│ ├── error.middleware.ts
+│ ├── multer.middleware.ts
+│ └── normalizeParams.middleware.ts
 │
-├── validators/           # Input validation
-│   ├── auth.validators.ts
-│   └── file.validators.ts
+├── validators/ # Input validation
+│ ├── auth.validators.ts
+│ └── file.validators.ts
 │
-├── utils/                # Helper functions
-│   ├── ApiError.ts
-│   ├── ApiResponse.ts
-│   ├── asyncHandler.ts
-│   ├── cloudinary.ts
-│   └── tokens.ts
+├── utils/ # Helper functions
+│ ├── ApiError.ts
+│ ├── ApiResponse.ts
+│ ├── asyncHandler.ts
+│ ├── cloudinary.ts
+│ └── tokens.ts
 │
-├── lib/                  # External service connections
-│   └── prisma.ts
+├── lib/ # External service connections
+│ └── prisma.ts
 │
-└── types/                # TypeScript type definitions
-    ├── environment.d.ts
-    ├── express.d.ts
-    └── cloudinary.types.ts
+└── types/ # TypeScript type definitions
+├── environment.d.ts
+├── express.d.ts
+└── cloudinary.types.ts
+
 ```
 
 ---
@@ -384,120 +351,128 @@ src/
 ### Registration Flow
 
 ```
-Client                  Server                  Database      Cloudinary
-  │                       │                        │              │
-  │  POST /user/register  │                        │              │
-  ├──────────────────────►│                        │              │
-  │  (multipart form)     │                        │              │
-  │                       │                        │              │
-  │                       │ 1. Validate input      │              │
-  │                       │ 2. Check unique email  │              │
-  │                       ├───────────────────────►│              │
-  │                       │◄───────────────────────┤              │
-  │                       │                        │              │
-  │                       │ 3. Upload avatar       │              │
-  │                       ├────────────────────────┼─────────────►│
-  │                       │◄────────────────────────────────────┤
-  │                       │                        │              │
-  │                       │ 4. Hash password       │              │
-  │                       │ 5. Create user         │              │
-  │                       ├───────────────────────►│              │
-  │                       │◄───────────────────────┤              │
-  │                       │                        │              │
-  │   Response (201)      │                        │              │
-  │◄──────────────────────┤                        │              │
-  │   User created        │                        │              │
+
+Client Server Database Cloudinary
+│ │ │ │
+│ POST /user/register │ │ │
+├──────────────────────►│ │ │
+│ (multipart form) │ │ │
+│ │ │ │
+│ │ 1. Validate input │ │
+│ │ 2. Check unique email │ │
+│ ├───────────────────────►│ │
+│ │◄───────────────────────┤ │
+│ │ │ │
+│ │ 3. Upload avatar │ │
+│ ├────────────────────────┼─────────────►│
+│ │◄────────────────────────────────────┤
+│ │ │ │
+│ │ 4. Hash password │ │
+│ │ 5. Create user │ │
+│ ├───────────────────────►│ │
+│ │◄───────────────────────┤ │
+│ │ │ │
+│ Response (201) │ │ │
+│◄──────────────────────┤ │ │
+│ User created │ │ │
+
 ```
 
 ### Login Flow
 
 ```
-Client                  Server                  Database
-  │                       │                        │
-  │  POST /user/login     │                        │
-  ├──────────────────────►│                        │
-  │  {email, password}    │                        │
-  │                       │                        │
-  │                       │ 1. Find user by email  │
-  │                       ├───────────────────────►│
-  │                       │◄───────────────────────┤
-  │                       │                        │
-  │                       │ 2. Compare password    │
-  │                       │    (bcrypt)            │
-  │                       │                        │
-  │                       │ 3. Generate JWT tokens │
-  │                       │    - Access Token      │
-  │                       │    - Refresh Token     │
-  │                       │                        │
-  │                       │ 4. Save refresh token  │
-  │                       ├───────────────────────►│
-  │                       │◄───────────────────────┤
-  │                       │                        │
-  │   Response (200)      │                        │
-  │◄──────────────────────┤                        │
-  │   + HTTP-only cookies │                        │
-  │   + Tokens in body    │                        │
+
+Client Server Database
+│ │ │
+│ POST /user/login │ │
+├──────────────────────►│ │
+│ {email, password} │ │
+│ │ │
+│ │ 1. Find user by email │
+│ ├───────────────────────►│
+│ │◄───────────────────────┤
+│ │ │
+│ │ 2. Compare password │
+│ │ (bcrypt) │
+│ │ │
+│ │ 3. Generate JWT tokens │
+│ │ - Access Token │
+│ │ - Refresh Token │
+│ │ │
+│ │ 4. Save refresh token │
+│ ├───────────────────────►│
+│ │◄───────────────────────┤
+│ │ │
+│ Response (200) │ │
+│◄──────────────────────┤ │
+│ + HTTP-only cookies │ │
+│ + Tokens in body │ │
+
 ```
 
 ### Token Refresh Flow
 
 ```
-Client                  Server                  Database
-  │                       │                        │
-  │  POST /refresh-token  │                        │
-  ├──────────────────────►│                        │
-  │  (refresh token in    │                        │
-  │   cookie)             │                        │
-  │                       │                        │
-  │                       │ 1. Extract refresh     │
-  │                       │    token from cookie   │
-  │                       │                        │
-  │                       │ 2. Verify JWT          │
-  │                       │                        │
-  │                       │ 3. Find user & compare │
-  │                       ├───────────────────────►│
-  │                       │◄───────────────────────┤
-  │                       │                        │
-  │                       │ 4. Generate new tokens │
-  │                       │                        │
-  │                       │ 5. Update refresh      │
-  │                       │    token in DB         │
-  │                       ├───────────────────────►│
-  │                       │◄───────────────────────┤
-  │                       │                        │
-  │   Response (200)      │                        │
-  │◄──────────────────────┤                        │
-  │   + New tokens        │                        │
+
+Client Server Database
+│ │ │
+│ POST /refresh-token │ │
+├──────────────────────►│ │
+│ (refresh token in │ │
+│ cookie) │ │
+│ │ │
+│ │ 1. Extract refresh │
+│ │ token from cookie │
+│ │ │
+│ │ 2. Verify JWT │
+│ │ │
+│ │ 3. Find user & compare │
+│ ├───────────────────────►│
+│ │◄───────────────────────┤
+│ │ │
+│ │ 4. Generate new tokens │
+│ │ │
+│ │ 5. Update refresh │
+│ │ token in DB │
+│ ├───────────────────────►│
+│ │◄───────────────────────┤
+│ │ │
+│ Response (200) │ │
+│◄──────────────────────┤ │
+│ + New tokens │ │
+
 ```
 
 ### Protected Route Access
 
 ```
-Client                  Server                  Database
-  │                       │                        │
-  │  GET /videos          │                        │
-  ├──────────────────────►│                        │
-  │  (access token in     │                        │
-  │   cookie/header)      │                        │
-  │                       │                        │
-  │                       │ 1. Extract token       │
-  │                       │                        │
-  │                       │ 2. Verify JWT          │
-  │                       │                        │
-  │                       │ 3. Decode payload      │
-  │                       │    (get user ID)       │
-  │                       │                        │
-  │                       │ 4. Find user           │
-  │                       ├───────────────────────►│
-  │                       │◄───────────────────────┤
-  │                       │                        │
-  │                       │ 5. Attach user to req  │
-  │                       │                        │
-  │                       │ 6. Execute controller  │
-  │                       │                        │
-  │   Response (200)      │                        │
-  │◄──────────────────────┤                        │
-  │   Data                │                        │
+
+Client Server Database
+│ │ │
+│ GET /videos │ │
+├──────────────────────►│ │
+│ (access token in │ │
+│ cookie/header) │ │
+│ │ │
+│ │ 1. Extract token │
+│ │ │
+│ │ 2. Verify JWT │
+│ │ │
+│ │ 3. Decode payload │
+│ │ (get user ID) │
+│ │ │
+│ │ 4. Find user │
+│ ├───────────────────────►│
+│ │◄───────────────────────┤
+│ │ │
+│ │ 5. Attach user to req │
+│ │ │
+│ │ 6. Execute controller │
+│ │ │
+│ Response (200) │ │
+│◄──────────────────────┤ │
+│ Data │ │
+
 ```
 
 ---
@@ -507,41 +482,43 @@ Client                  Server                  Database
 ### Video Upload Process
 
 ```
-Client              Server                 Cloudinary           Database
-  │                    │                        │                  │
-  │  POST /videos      │                        │                  │
-  ├───────────────────►│                        │                  │
-  │  (multipart/       │                        │                  │
-  │   form-data)       │                        │                  │
-  │                    │                        │                  │
-  │                    │ 1. Multer middleware   │                  │
-  │                    │    saves files to      │                  │
-  │                    │    public/temp/        │                  │
-  │                    │                        │                  │
-  │                    │ 2. Validate files      │                  │
-  │                    │    (size, type)        │                  │
-  │                    │                        │                  │
-  │                    │ 3. Upload video to     │                  │
-  │                    │    Cloudinary          │                  │
-  │                    ├───────────────────────►│                  │
-  │                    │◄───────────────────────┤                  │
-  │                    │    (video URL)         │                  │
-  │                    │                        │                  │
-  │                    │ 4. Upload thumbnail    │                  │
-  │                    ├───────────────────────►│                  │
-  │                    │◄───────────────────────┤                  │
-  │                    │    (thumb URL)         │                  │
-  │                    │                        │                  │
-  │                    │ 5. Delete local files  │                  │
-  │                    │                        │                  │
-  │                    │ 6. Create video record │                  │
-  │                    ├────────────────────────┼─────────────────►│
-  │                    │◄────────────────────────────────────────┤
-  │                    │                        │                  │
-  │   Response (201)   │                        │                  │
-  │◄───────────────────┤                        │                  │
-  │   Video created    │                        │                  │
-```
+
+Client Server Cloudinary Database
+│ │ │ │
+│ POST /videos │ │ │
+├───────────────────►│ │ │
+│ (multipart/ │ │ │
+│ form-data) │ │ │
+│ │ │ │
+│ │ 1. Multer middleware │ │
+│ │ saves files to │ │
+│ │ public/temp/ │ │
+│ │ │ │
+│ │ 2. Validate files │ │
+│ │ (size, type) │ │
+│ │ │ │
+│ │ 3. Upload video to │ │
+│ │ Cloudinary │ │
+│ ├───────────────────────►│ │
+│ │◄───────────────────────┤ │
+│ │ (video URL) │ │
+│ │ │ │
+│ │ 4. Upload thumbnail │ │
+│ ├───────────────────────►│ │
+│ │◄───────────────────────┤ │
+│ │ (thumb URL) │ │
+│ │ │ │
+│ │ 5. Delete local files │ │
+│ │ │ │
+│ │ 6. Create video record │ │
+│ ├────────────────────────┼─────────────────►│
+│ │◄────────────────────────────────────────┤
+│ │ │ │
+│ Response (201) │ │ │
+│◄───────────────────┤ │ │
+│ Video created │ │ │
+
+````
 
 ### Cloudinary Configuration
 
@@ -562,7 +539,7 @@ Client              Server                 Cloudinary           Database
     { width: 300, height: 300, crop: "fill" }
   ]
 }
-```
+````
 
 ---
 
@@ -837,6 +814,6 @@ CLOUDINARY_API_SECRET=<api-secret>
 
 ---
 
-**Document Version**: 1.0.0  
+**Document Version**: 2.0.0  
 **Last Updated**: January 2026  
 **Maintainer**: Nishant Sharma
