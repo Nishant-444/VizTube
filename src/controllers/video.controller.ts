@@ -6,7 +6,7 @@ import {
   uploadOnCloudinary,
 } from '../utils/cloudinary.js';
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
-import prisma from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 import fs from 'fs';
 
 // helper function
@@ -143,7 +143,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     ...video,
     user: {
       ...restOfUser,
-      subscribersCount: _count.subscribers, 
+      subscribersCount: _count.subscribers,
     },
   };
 

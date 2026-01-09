@@ -1,4 +1,3 @@
-import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
@@ -7,10 +6,12 @@ import {
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
 import { cookieOptions } from '../config/cookieOptions.js';
-import prisma from '../lib/prisma.js';
+// import prisma from '../lib/prisma.js';
+
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens.js';
+import { prisma } from '../lib/prisma.js';
 
 // internal functions
 
@@ -245,9 +246,17 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  // console.log(files);
+
   const avatarLocalPath = files?.avatar?.[0]?.path;
+  // console.log(avatarLocalPath);
+
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
-  if (!avatarLocalPath) throw new ApiError(400, 'Avatar file is required');
+  if (!avatarLocalPath) {
+    console.log('Error in avatar file ');
+
+    throw new ApiError(400, 'Avatar file is required');
+  }
 
   // delete old avatar from Cloudinary
   const oldUser = await prisma.user.findUnique({ where: { id: req.user.id } });

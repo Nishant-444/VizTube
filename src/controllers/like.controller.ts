@@ -1,7 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import prisma from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -153,7 +153,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     },
   });
 
-  const formattedVideos = likedVideos.map((item) => item.video);
+  const formattedVideos = likedVideos.map((item: any) => item.video);
 
   return res
     .status(200)

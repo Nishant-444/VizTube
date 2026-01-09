@@ -1,7 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import prisma from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
@@ -77,7 +77,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     },
   });
 
-  const formattedSubscribers = subscribers.map((sub) => sub.subscriber);
+  const formattedSubscribers = subscribers.map((sub: any) => sub.subscriber);
 
   return res
     .status(200)
@@ -111,7 +111,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     },
   });
 
-  const formattedChannels = subscribedChannels.map((sub) => sub.channel);
+  const formattedChannels = subscribedChannels.map((sub: any) => sub.channel);
 
   return res
     .status(200)

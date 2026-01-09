@@ -1,7 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import prisma from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
@@ -54,7 +54,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     },
   });
 
-  const formattedPlaylists = playlists.map((playlist) => ({
+  const formattedPlaylists = playlists.map((playlist: any) => ({
     ...playlist,
     totalVideos: playlist._count.videos,
     thumbnail: playlist.videos[0]?.video?.thumbnailUrl || null,
@@ -111,9 +111,9 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Playlist not found');
   }
 
-  const videos = playlist.videos.map((item) => item.video);
+  const videos = playlist.videos.map((item: any) => item.video);
 
-  const totalViews = videos.reduce((sum, v) => sum + v.views, 0);
+  const totalViews = videos.reduce((sum: any, v: any) => sum + v.views, 0);
 
   const responseData = {
     ...playlist,
