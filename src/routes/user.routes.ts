@@ -84,7 +84,7 @@ router
 router
   .route('/update-avatar')
   .patch(
-    upload.single('avatar'),
+    upload.fields([{ name: 'avatar', maxCount: 1 }]),
     asyncHandler(validateAvatarFile),
     asyncHandler(userController.updateUserAvatar)
   );
@@ -92,7 +92,7 @@ router
 router
   .route('/update-cover-image')
   .patch(
-    upload.single('coverImage'),
+    upload.fields([{ name: 'coverImage', maxCount: 1 }]),
     asyncHandler(validateCoverImageFile),
     asyncHandler(userController.updateUserCoverImage)
   );
