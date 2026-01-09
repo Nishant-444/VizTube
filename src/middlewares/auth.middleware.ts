@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import prisma from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 // id is number not a string in postgres
 interface JWTPayload {

@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 
-// for trimming the username in params that is the url
+// for trimming the username in params(url)
 export const normalizeUsername = (
   req: Request,
   res: Response,
