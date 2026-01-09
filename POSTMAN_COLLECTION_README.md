@@ -1,10 +1,10 @@
 # Viztube Postman Collection Guide
 
-## 📦 Overview
+##  Overview
 
 This comprehensive Postman collection contains **43 API endpoints** covering all features of the Viztube video streaming platform backend.
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Import Collection
 
@@ -34,7 +34,7 @@ The collection includes pre-configured variables:
 2. **Returning Users:** Use "Login User" or "Refresh Access Token"
 3. Tokens are automatically saved and used in subsequent requests
 
-## 📂 Collection Structure
+##  Collection Structure
 
 ### 1. Health Check (1 endpoint)
 
@@ -110,7 +110,7 @@ The collection includes pre-configured variables:
 - **GET** Get Channel Stats - Total views, subscribers, videos, likes
 - **GET** Get Channel Videos - All uploaded videos with stats
 
-## 🔐 Authentication
+##  Authentication
 
 ### Authorization Header
 
@@ -128,7 +128,7 @@ This is automatically configured in the collection. After login, the `accessToke
 2. **Access Token Expires** → Use "Refresh Access Token" endpoint
 3. **Refresh Token Expires** → Must login again
 
-## 🎯 Common Workflows
+##  Common Workflows
 
 ### Complete User Journey
 
@@ -169,7 +169,7 @@ This is automatically configured in the collection. After login, the `accessToke
 8. Add Videos to Playlist
 ```
 
-## 📝 Request Examples
+##  Request Examples
 
 ### Register User
 
@@ -220,7 +220,7 @@ GET {{baseUrl}}/videos?page=1&limit=10&sortBy=views&sortType=desc
 Authorization: Bearer {{accessToken}}
 ```
 
-## ✨ Auto-Generated Variables
+##  Auto-Generated Variables
 
 The collection includes **test scripts** that automatically extract and save important values:
 
@@ -256,7 +256,7 @@ The collection includes **test scripts** that automatically extract and save imp
 - playlistId → Used in playlist operations
 ```
 
-## 🔧 Customization
+##  Customization
 
 ### Change Base URL
 
@@ -276,7 +276,7 @@ Edit any request to add custom headers:
 X-Custom-Header: value
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Issue: 401 Unauthorized
 
@@ -314,7 +314,7 @@ X-Custom-Header: value
 - Must login before using protected endpoints
 - Must create resource before referencing it
 
-## 📊 Testing Features
+##  Testing Features
 
 ### Pagination
 
@@ -342,7 +342,7 @@ Video list supports filters:
 ?query=<search-term>     // Search in title/description
 ```
 
-## 🎓 Best Practices
+##  Best Practices
 
 1. **Always start with Health Check** - Verify API is running
 2. **Login before testing** - Most endpoints require authentication
@@ -351,7 +351,7 @@ Video list supports filters:
 5. **Review descriptions** - Each request has detailed documentation
 6. **Test in order** - Follow logical workflows for best results
 
-## 📄 Response Format
+##  Response Format
 
 ### Success Response
 
@@ -379,12 +379,12 @@ Video list supports filters:
 }
 ```
 
-## 🔗 Related Documentation
+##  Related Documentation
 
 - [PRD.md](./PRD.md) - Complete Product Requirements Document
 - [README.md](./README.md) - Project setup and documentation
 
-## 📞 Support
+##  Support
 
 For issues or questions:
 

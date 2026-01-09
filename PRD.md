@@ -10,7 +10,7 @@
 **Version:** 2.0.0  
 **Document Date:** January 9, 2026  
 **Author:** Nishant Sharma  
-**Status:** ✅ Complete & Production Ready
+**Status:**  Complete & Production Ready
 
 ### 1.1 Product Overview
 
@@ -463,34 +463,34 @@ Development: http://localhost:8000/api/v1
 
 ### 5.3 Video Management (6 endpoints)
 
-**GET /videos** 🔒
+**GET /videos** 
 - Get all published videos
 - Query params: page, limit (pagination)
 - Returns: Array of videos with owner info
 
-**POST /videos** 🔒
+**POST /videos** 
 - Upload new video with thumbnail
 - Required: videoFile, thumbnail, title
 - Optional: description
 - Content-Type: multipart/form-data
 - Automatically extracts video duration
 
-**GET /videos/:videoId** 🔒
+**GET /videos/:videoId** 
 - Get video details by ID
 - Automatically increments view count
 - Returns: Video with owner, likes count, comments count
 
-**PATCH /videos/:videoId** 🔒
+**PATCH /videos/:videoId** 
 - Update video details (owner only)
 - Optional: title, description, thumbnail
 - Content-Type: multipart/form-data (if thumbnail)
 
-**DELETE /videos/:videoId** 🔒
+**DELETE /videos/:videoId** 
 - Delete video (owner only)
 - Removes files from Cloudinary
 - Cascades to delete comments, likes, etc.
 
-**PATCH /videos/toggle/publish/:videoId** 🔒
+**PATCH /videos/toggle/publish/:videoId** 
 - Toggle video publish status (owner only)
 - Toggles between published/unpublished
 
@@ -498,38 +498,38 @@ Development: http://localhost:8000/api/v1
 
 ### 5.4 Comment Management (4 endpoints)
 
-**GET /comments/:videoId** 🔒
+**GET /comments/:videoId** 
 - Get all comments for a video
 - Returns: Comments with user info and like count
 
-**POST /comments/:videoId** 🔒
+**POST /comments/:videoId** 
 - Add comment to video
 - Required: content
 
-**PATCH /comments/c/:commentId** 🔒
+**PATCH /comments/c/:commentId** 
 - Update comment content (owner only)
 - Required: content
 
-**DELETE /comments/c/:commentId** 🔒
+**DELETE /comments/c/:commentId** 
 - Delete comment (owner only)
 
 ---
 
 ### 5.5 Like System (4 endpoints)
 
-**POST /likes/toggle/v/:videoId** 🔒
+**POST /likes/toggle/v/:videoId** 
 - Toggle like on video
 - Returns: { liked: boolean }
 
-**POST /likes/toggle/c/:commentId** 🔒
+**POST /likes/toggle/c/:commentId** 
 - Toggle like on comment
 - Returns: { liked: boolean }
 
-**POST /likes/toggle/t/:tweetId** 🔒
+**POST /likes/toggle/t/:tweetId** 
 - Toggle like on tweet
 - Returns: { liked: boolean }
 
-**GET /likes/videos** 🔒
+**GET /likes/videos** 
 - Get all videos liked by current user
 - Returns: Array of liked videos with details
 
@@ -537,15 +537,15 @@ Development: http://localhost:8000/api/v1
 
 ### 5.6 Subscription Management (3 endpoints)
 
-**POST /subscriptions/c/:channelId** 🔒
+**POST /subscriptions/c/:channelId** 
 - Subscribe/unsubscribe to channel
 - Returns: { subscribed: boolean }
 
-**GET /subscriptions/c/:channelId** 🔒
+**GET /subscriptions/c/:channelId** 
 - Get channel's subscribers list
 - Returns: Subscribers array with count
 
-**GET /subscriptions/u/:subscriberId** 🔒
+**GET /subscriptions/u/:subscriberId** 
 - Get user's subscribed channels
 - Returns: Subscriptions array with count
 
@@ -553,59 +553,59 @@ Development: http://localhost:8000/api/v1
 
 ### 5.7 Playlist Management (7 endpoints)
 
-**POST /playlist** 🔒
+**POST /playlist** 
 - Create new playlist
 - Required: name, description
 
-**GET /playlist/user/:userId** 🔒
+**GET /playlist/user/:userId** 
 - Get all playlists for a user
 - Returns: Playlists with video count
 
-**GET /playlist/:playlistId** 🔒
+**GET /playlist/:playlistId** 
 - Get playlist details with videos
 - Returns: Playlist with video array
 
-**PATCH /playlist/:playlistId** 🔒
+**PATCH /playlist/:playlistId** 
 - Update playlist (owner only)
 - Optional: name, description
 
-**DELETE /playlist/:playlistId** 🔒
+**DELETE /playlist/:playlistId** 
 - Delete playlist (owner only)
 
-**POST /playlist/:playlistId/:videoId** 🔒
+**POST /playlist/:playlistId/:videoId** 
 - Add video to playlist (owner only)
 
-**DELETE /playlist/:playlistId/:videoId** 🔒
+**DELETE /playlist/:playlistId/:videoId** 
 - Remove video from playlist (owner only)
 
 ---
 
 ### 5.8 Tweet Management (4 endpoints)
 
-**POST /tweets** 🔒
+**POST /tweets** 
 - Create new tweet/post
 - Required: content
 
-**GET /tweets/user/:userId** 🔒
+**GET /tweets/user/:userId** 
 - Get all tweets by user
 - Returns: Tweets with user info and likes
 
-**PATCH /tweets/:tweetId** 🔒
+**PATCH /tweets/:tweetId** 
 - Update tweet (owner only)
 - Required: content
 
-**DELETE /tweets/:tweetId** 🔒
+**DELETE /tweets/:tweetId** 
 - Delete tweet (owner only)
 
 ---
 
 ### 5.9 Dashboard Analytics (2 endpoints)
 
-**GET /dashboard/stats** 🔒
+**GET /dashboard/stats** 
 - Get channel statistics
 - Returns: totalVideos, totalViews, totalSubscribers, totalLikes
 
-**GET /dashboard/videos** 🔒
+**GET /dashboard/videos** 
 - Get all videos uploaded by current user
 - Returns: Array of user's videos with stats
 
@@ -963,4 +963,4 @@ GitHub → Actions → Build → Test → Deploy → Production
 
 **Document Version:** 2.0.0  
 **Last Updated:** January 9, 2026  
-**Status:** ✅ Complete & Production Ready
+**Status:**  Complete & Production Ready

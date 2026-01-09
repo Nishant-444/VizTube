@@ -11,11 +11,11 @@ VizTube is a complete, high-performance backend service for a video-sharing plat
 
 This project is intended for **developers**, **interviewers**, and **technical evaluators** to use as a robust foundation for video applications or to understand how a complex backend system is architected and organized.
 
-**Project Status:** ✅ **Complete & Production Ready**
+**Project Status:**  **Complete & Production Ready**
 
 ---
 
-## 🌟 Highlights for Interviewers & Technical Reviewers
+##  Highlights for Interviewers & Technical Reviewers
 
 - **Modern Tech Stack**: TypeScript, PostgreSQL, Prisma ORM, Express 5.1
 - **Type-Safe**: Full TypeScript implementation with strict type checking
@@ -28,9 +28,9 @@ This project is intended for **developers**, **interviewers**, and **technical e
 
 ---
 
-## ✨ Features at a Glance
+##  Features at a Glance
 
-### 🔐 Authentication & User Management
+###  Authentication & User Management
 
 - User registration with avatar and cover image upload
 - Secure login with JWT (access + refresh tokens)
@@ -40,7 +40,7 @@ This project is intended for **developers**, **interviewers**, and **technical e
 - Channel profile with subscriber/subscription counts
 - Watch history tracking
 
-### 🎥 Video Management
+###  Video Management
 
 - Video upload with thumbnail to Cloudinary
 - Automatic video metadata extraction (duration)
@@ -49,14 +49,14 @@ This project is intended for **developers**, **interviewers**, and **technical e
 - View count tracking
 - Owner-based permissions
 
-### 💬 Social Interactions
+###  Social Interactions
 
 - **Comments**: Add, update, delete comments on videos
 - **Likes**: Toggle likes on videos, comments, and tweets
 - **Subscriptions**: Subscribe/unsubscribe to channels
 - **Tweets**: Create, read, update, delete community posts
 
-### 📝 Content Organization
+###  Content Organization
 
 - **Playlists**: Full CRUD with video management
   - Create playlists with name and description
@@ -65,14 +65,14 @@ This project is intended for **developers**, **interviewers**, and **technical e
   - Get playlist details with videos
 - **Watch History**: Automatic tracking of watched videos
 
-### 📊 Analytics Dashboard
+###  Analytics Dashboard
 
 - Channel statistics (total views, subscribers, videos, likes)
 - Channel videos list for creators
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Core Technologies
 
@@ -103,7 +103,7 @@ This project is intended for **developers**, **interviewers**, and **technical e
 
 ---
 
-## 📦 Project Structure
+##  Project Structure
 
 ```
 viztube/
@@ -189,7 +189,7 @@ viztube/
 
 ---
 
-## 📊 Database Schema
+##  Database Schema
 
 ### Models Overview
 
@@ -237,7 +237,7 @@ Playlist (1) ──── (N) PlaylistVideo ──── (N) Video
 
 ---
 
-## ⚙️ Setup & Installation
+##  Setup & Installation
 
 ### Prerequisites
 
@@ -342,11 +342,11 @@ Playlist (1) ──── (N) PlaylistVideo ──── (N) Video
    }
    ```
 
-   Your API is now running on `http://localhost:8000/api/v1` 🎉
+   Your API is now running on `http://localhost:8000/api/v1` 
 
 ---
 
-## 🧪 API Documentation
+##  API Documentation
 
 ### Complete Documentation Files
 
@@ -370,60 +370,60 @@ Playlist (1) ──── (N) PlaylistVideo ──── (N) Video
 
 | Endpoint                          | Method | Description                | Auth |
 | --------------------------------- | ------ | -------------------------- | ---- |
-| `/healthcheck`                    | GET    | API health status          | ❌   |
+| `/healthcheck`                    | GET    | API health status          |    |
 | **User Management**               |
-| `/user/register`                  | POST   | Register new user          | ❌   |
-| `/user/login`                     | POST   | Login user                 | ❌   |
-| `/user/refresh-token`             | POST   | Refresh access token       | ❌   |
-| `/user/logout`                    | POST   | Logout user                | ✅   |
-| `/user/change-password`           | POST   | Change password            | ✅   |
-| `/user/current-user-details`      | GET    | Get current user           | ✅   |
-| `/user/c/:username`               | GET    | Get channel profile        | ✅   |
-| `/user/update-account`            | PATCH  | Update account details     | ✅   |
-| `/user/update-avatar`             | PATCH  | Update avatar              | ✅   |
-| `/user/update-cover-image`        | PATCH  | Update cover image         | ✅   |
-| `/user/watch-history`             | GET    | Get watch history          | ✅   |
+| `/user/register`                  | POST   | Register new user          |    |
+| `/user/login`                     | POST   | Login user                 |    |
+| `/user/refresh-token`             | POST   | Refresh access token       |    |
+| `/user/logout`                    | POST   | Logout user                |    |
+| `/user/change-password`           | POST   | Change password            |    |
+| `/user/current-user-details`      | GET    | Get current user           |    |
+| `/user/c/:username`               | GET    | Get channel profile        |    |
+| `/user/update-account`            | PATCH  | Update account details     |    |
+| `/user/update-avatar`             | PATCH  | Update avatar              |    |
+| `/user/update-cover-image`        | PATCH  | Update cover image         |    |
+| `/user/watch-history`             | GET    | Get watch history          |    |
 | **Video Management**              |
-| `/videos`                         | GET    | Get all videos             | ✅   |
-| `/videos`                         | POST   | Upload video               | ✅   |
-| `/videos/:videoId`                | GET    | Get video by ID            | ✅   |
-| `/videos/:videoId`                | PATCH  | Update video               | ✅   |
-| `/videos/:videoId`                | DELETE | Delete video               | ✅   |
-| `/videos/toggle/publish/:videoId` | PATCH  | Toggle publish status      | ✅   |
+| `/videos`                         | GET    | Get all videos             |    |
+| `/videos`                         | POST   | Upload video               |    |
+| `/videos/:videoId`                | GET    | Get video by ID            |    |
+| `/videos/:videoId`                | PATCH  | Update video               |    |
+| `/videos/:videoId`                | DELETE | Delete video               |    |
+| `/videos/toggle/publish/:videoId` | PATCH  | Toggle publish status      |    |
 | **Comments**                      |
-| `/comments/:videoId`              | GET    | Get video comments         | ✅   |
-| `/comments/:videoId`              | POST   | Add comment                | ✅   |
-| `/comments/c/:commentId`          | PATCH  | Update comment             | ✅   |
-| `/comments/c/:commentId`          | DELETE | Delete comment             | ✅   |
+| `/comments/:videoId`              | GET    | Get video comments         |    |
+| `/comments/:videoId`              | POST   | Add comment                |    |
+| `/comments/c/:commentId`          | PATCH  | Update comment             |    |
+| `/comments/c/:commentId`          | DELETE | Delete comment             |    |
 | **Likes**                         |
-| `/likes/toggle/v/:videoId`        | POST   | Toggle video like          | ✅   |
-| `/likes/toggle/c/:commentId`      | POST   | Toggle comment like        | ✅   |
-| `/likes/toggle/t/:tweetId`        | POST   | Toggle tweet like          | ✅   |
-| `/likes/videos`                   | GET    | Get liked videos           | ✅   |
+| `/likes/toggle/v/:videoId`        | POST   | Toggle video like          |    |
+| `/likes/toggle/c/:commentId`      | POST   | Toggle comment like        |    |
+| `/likes/toggle/t/:tweetId`        | POST   | Toggle tweet like          |    |
+| `/likes/videos`                   | GET    | Get liked videos           |    |
 | **Subscriptions**                 |
-| `/subscriptions/c/:channelId`     | POST   | Toggle subscription        | ✅   |
-| `/subscriptions/c/:channelId`     | GET    | Get channel subscribers    | ✅   |
-| `/subscriptions/u/:subscriberId`  | GET    | Get user subscriptions     | ✅   |
+| `/subscriptions/c/:channelId`     | POST   | Toggle subscription        |    |
+| `/subscriptions/c/:channelId`     | GET    | Get channel subscribers    |    |
+| `/subscriptions/u/:subscriberId`  | GET    | Get user subscriptions     |    |
 | **Playlists**                     |
-| `/playlist`                       | POST   | Create playlist            | ✅   |
-| `/playlist/user/:userId`          | GET    | Get user playlists         | ✅   |
-| `/playlist/:playlistId`           | GET    | Get playlist by ID         | ✅   |
-| `/playlist/:playlistId`           | PATCH  | Update playlist            | ✅   |
-| `/playlist/:playlistId`           | DELETE | Delete playlist            | ✅   |
-| `/playlist/:playlistId/:videoId`  | POST   | Add video to playlist      | ✅   |
-| `/playlist/:playlistId/:videoId`  | DELETE | Remove video from playlist | ✅   |
+| `/playlist`                       | POST   | Create playlist            |    |
+| `/playlist/user/:userId`          | GET    | Get user playlists         |    |
+| `/playlist/:playlistId`           | GET    | Get playlist by ID         |    |
+| `/playlist/:playlistId`           | PATCH  | Update playlist            |    |
+| `/playlist/:playlistId`           | DELETE | Delete playlist            |    |
+| `/playlist/:playlistId/:videoId`  | POST   | Add video to playlist      |    |
+| `/playlist/:playlistId/:videoId`  | DELETE | Remove video from playlist |    |
 | **Tweets**                        |
-| `/tweets`                         | POST   | Create tweet               | ✅   |
-| `/tweets/user/:userId`            | GET    | Get user tweets            | ✅   |
-| `/tweets/:tweetId`                | PATCH  | Update tweet               | ✅   |
-| `/tweets/:tweetId`                | DELETE | Delete tweet               | ✅   |
+| `/tweets`                         | POST   | Create tweet               |    |
+| `/tweets/user/:userId`            | GET    | Get user tweets            |    |
+| `/tweets/:tweetId`                | PATCH  | Update tweet               |    |
+| `/tweets/:tweetId`                | DELETE | Delete tweet               |    |
 | **Dashboard**                     |
-| `/dashboard/stats`                | GET    | Get channel stats          | ✅   |
-| `/dashboard/videos`               | GET    | Get channel videos         | ✅   |
+| `/dashboard/stats`                | GET    | Get channel stats          |    |
+| `/dashboard/videos`               | GET    | Get channel videos         |    |
 
 ---
 
-## 🔑 Key Technical Features
+##  Key Technical Features
 
 ### 1. Type-Safe Development
 
@@ -470,35 +470,35 @@ Playlist (1) ──── (N) PlaylistVideo ──── (N) Video
 
 ---
 
-## 🔒 Security Features
+##  Security Features
 
-✅ **Password Security**
+ **Password Security**
 
 - Bcrypt hashing with salt rounds
 - Password confirmation before changes
 - No plain text password storage
 
-✅ **Authentication**
+ **Authentication**
 
 - JWT with expiry times
 - Refresh token rotation
 - HTTP-only cookies (XSS protection)
 - Token verification middleware
 
-✅ **Input Validation**
+ **Input Validation**
 
 - Request body validation
 - File type and size validation
 - Parameter normalization (username sanitization)
 - SQL injection prevention (Prisma)
 
-✅ **Authorization**
+ **Authorization**
 
 - Owner-based permissions for resources
 - Protected routes with JWT verification
 - CORS configuration
 
-✅ **File Upload Security**
+ **File Upload Security**
 
 - File size limits (16KB for JSON, 10MB for images, 100MB for videos)
 - File type validation (MIME types)
@@ -506,7 +506,7 @@ Playlist (1) ──── (N) PlaylistVideo ──── (N) Video
 
 ---
 
-## 🚀 Deployment
+##  Deployment
 
 ### Database Migration
 
@@ -546,7 +546,7 @@ Ensure these variables are set in production:
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Using Postman
 
@@ -578,7 +578,7 @@ curl -X POST http://localhost:8000/api/v1/user/login \
 
 ---
 
-## 📝 Code Quality
+##  Code Quality
 
 - **ESLint** for code linting
 - **Prettier** for code formatting
@@ -589,7 +589,7 @@ curl -X POST http://localhost:8000/api/v1/user/login \
 
 ---
 
-## 🛣️ Roadmap
+##  Roadmap
 
 - [ ] Unit & integration tests (Jest)
 - [ ] API rate limiting
@@ -604,7 +604,7 @@ curl -X POST http://localhost:8000/api/v1/user/login \
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions, issues, and feature requests are welcome!
 
@@ -616,13 +616,13 @@ Contributions, issues, and feature requests are welcome!
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the **ISC License**.
 
 ---
 
-## 👨‍💻 Author
+## ‍ Author
 
 **Nishant Sharma**
 
@@ -631,7 +631,7 @@ This project is licensed under the **ISC License**.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Express.js team for the excellent framework
 - Prisma team for the amazing ORM
@@ -641,10 +641,10 @@ This project is licensed under the **ISC License**.
 
 ---
 
-## ⭐ Show Your Support
+##  Show Your Support
 
-If this project helped you or you found it interesting, please consider giving it a ⭐ on GitHub!
+If this project helped you or you found it interesting, please consider giving it a  on GitHub!
 
 ---
 
-**Built with ❤️ using TypeScript, Node.js, Express, PostgreSQL, and Prisma**
+**Built with  using TypeScript, Node.js, Express, PostgreSQL, and Prisma**
