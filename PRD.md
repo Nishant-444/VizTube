@@ -1,24 +1,37 @@
 # Product Requirements Document (PRD)
 
-## Viztube - Video Sharing Platform Backend
+## VizTube - Video Sharing Platform Backend
 
 ---
 
 ## 1. Executive Summary
 
-**Project Name:** Viztube  
-**Version:** 1.1.0  
-**Document Date:** January 6, 2026  
+**Project Name:** VizTube  
+**Version:** 2.0.0  
+**Document Date:** January 9, 2026  
 **Author:** Nishant Sharma  
 **Status:** ✅ Complete & Production Ready
 
 ### 1.1 Product Overview
 
-Viztube is a comprehensive backend system for a video-sharing platform inspired by YouTube. It provides a robust RESTful API for managing users, videos, comments, subscriptions, playlists, and social interactions similar to modern video-sharing platforms.
+VizTube is a comprehensive, production-ready backend system for a video-sharing platform inspired by YouTube. Built with modern technologies including TypeScript, PostgreSQL, and Prisma ORM, it provides a robust RESTful API for managing users, videos, comments, subscriptions, playlists, and social interactions.
 
 ### 1.2 Product Vision
 
-To create a scalable, secure, and feature-rich backend infrastructure that powers a complete video-sharing ecosystem with user authentication, video management, social interactions, and content discovery capabilities.
+To create a scalable, secure, and feature-rich backend infrastructure that powers a complete video-sharing ecosystem with:
+- Type-safe development with TypeScript
+- Relational database design with PostgreSQL
+- Secure authentication and authorization
+- Cloud-based media storage and delivery
+- Comprehensive social interaction features
+
+### 1.3 Key Differentiators
+
+- **Type Safety**: Full TypeScript implementation with Prisma for end-to-end type safety
+- **Relational Database**: PostgreSQL with proper normalization and relationships
+- **Modern ORM**: Prisma for type-safe database queries and automatic migrations
+- **Scalable Architecture**: Stateless design with JWT and cloud storage
+- **Production Ready**: Complete error handling, validation, and security features
 
 ---
 
@@ -27,19 +40,20 @@ To create a scalable, secure, and feature-rich backend infrastructure that power
 ### 2.1 Primary Objectives
 
 - Build a production-ready video-sharing platform backend
-- Implement secure user authentication and authorization
-- Enable seamless video upload, storage, and streaming
-- Facilitate social interactions (likes, comments, subscriptions)
+- Implement secure JWT-based authentication with refresh tokens
+- Enable seamless video upload, storage, and streaming via Cloudinary
+- Facilitate social interactions (likes, comments, subscriptions, tweets)
 - Provide robust content management and organization
-- Support scalable media storage using cloud services
+- Ensure type safety across the entire application
 
 ### 2.2 Success Metrics
 
 - API response time < 200ms for standard operations
 - Support for concurrent video uploads
-- Secure JWT-based authentication with refresh token mechanism
 - 99.9% uptime reliability
-- Efficient pagination for large datasets
+- Zero runtime type errors (TypeScript + Prisma)
+- Secure authentication with token refresh mechanism
+- Efficient database queries with proper indexing
 
 ---
 
@@ -51,34 +65,38 @@ To create a scalable, secure, and feature-rich backend infrastructure that power
 
 - **Runtime:** Node.js v18+ (ES Modules)
 - **Framework:** Express.js v5.1.0
-- **Language:** TypeScript v5.9.3 (migrated from JavaScript for enhanced type safety)
+- **Language:** TypeScript v5.9.3 with strict mode
 
 #### Database
 
-- **Primary Database:** MongoDB v8.19.1
-- **ODM:** Mongoose with aggregate pagination support
+- **Primary Database:** PostgreSQL (Relational Database)
+- **ORM:** Prisma v7.2.0
+  - Type-safe database client
+  - Declarative migrations
+  - Auto-generated TypeScript types
 
 #### Authentication & Security
 
-- **Authentication:** JWT (JSON Web Tokens)
-- **Password Hashing:** Bcrypt v6.0.0
+- **Authentication:** JWT (JSON Web Tokens) v9.0.2
+- **Password Hashing:** Bcrypt v6.0.0 (10 salt rounds)
 - **Token Types:**
-  - Access Token (short-lived)
-  - Refresh Token (long-lived)
+  - Access Token (15 minutes, short-lived)
+  - Refresh Token (7 days, long-lived)
+- **Storage:** HTTP-only cookies + response body
 
 #### File Storage & Processing
 
 - **Cloud Storage:** Cloudinary v2.8.0
 - **File Upload:** Multer v2.0.2
 - **Media Types:** Videos, Images (avatars, thumbnails, cover images)
+- **Validation:** File size and type validation
 
 #### Additional Libraries
 
-- **CORS:** Cross-Origin Resource Sharing enabled
-- **Cookie Parser:** Secure cookie management
+- **CORS:** Cross-Origin Resource Sharing
+- **Cookie Parser:** Secure cookie handling
 - **Dotenv:** Environment variable management
-- **TypeScript Development Tools:** tsx, ts-node, ts-node-dev for development workflow
-- **Code Quality:** ESLint, Prettier for consistent code formatting
+- **ESLint & Prettier:** Code quality and formatting
 
 ### 3.2 System Architecture
 
@@ -88,34 +106,53 @@ Client Application
    API Gateway
        ↓
 Express.js Middleware Layer
+   ├── CORS Configuration
+   ├── Body Parser (JSON/URLEncoded)
+   ├── Cookie Parser
    ├── Authentication (JWT Verification)
    ├── File Upload (Multer)
-   ├── Validation (Input Validators)
-   ├── Parameter Normalization (Username sanitization)
+   ├── Input Validation
+   ├── Parameter Normalization
    └── Error Handling
        ↓
-Controller Layer
+Router Layer
+   ├── User Routes
+   ├── Video Routes
+   ├── Comment Routes
+   ├── Like Routes
+   ├── Subscription Routes
+   ├── Playlist Routes
+   ├── Tweet Routes
+   └── Dashboard Routes
+       ↓
+Controller Layer (* as import pattern)
    ├── User Controller
    ├── Video Controller
    ├── Comment Controller
+   ├── Like Controller
    ├── Subscription Controller
    ├── Playlist Controller
    ├── Tweet Controller
-   ├── Like Controller
    └── Dashboard Controller
        ↓
-Model Layer (MongoDB/Mongoose)
-   ├── User Model
-   ├── Video Model
-   ├── Comment Model
-   ├── Subscription Model
-   ├── Playlist Model
-   ├── Tweet Model
-   └── Like Model
+Prisma ORM Layer
+   ├── Type-safe queries
+   ├── Transaction support
+   ├── Connection pooling
+   └── Query optimization
+       ↓
+PostgreSQL Database
+   ├── User Table
+   ├── Video Table
+   ├── Comment Table
+   ├── Like Table
+   ├── Subscription Table
+   ├── Playlist Tables
+   ├── Tweet Table
+   └── WatchHistory Table
        ↓
 External Services
-   ├── MongoDB Database
-   └── Cloudinary (Media Storage)
+   └── Cloudinary (Media CDN)
 ```
 
 ---
@@ -124,870 +161,806 @@ External Services
 
 ### 4.1 User Model
 
-```javascript
-{
-  username: String (unique, indexed, lowercase, min: 3 chars),
-  email: String (unique, indexed, validated),
-  fullname: String (required),
-  avatar: String (Cloudinary URL, default provided),
-  coverImage: String (Cloudinary URL, default provided),
-  watchHistory: [ObjectId] (references Video),
-  password: String (hashed with bcrypt),
-  refreshToken: String,
-  timestamps: { createdAt, updatedAt }
+```prisma
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  fullname     String
+  avatar       String   @default("...")
+  coverImage   String   @default("...")
+  password     String
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  videos         Video[]
+  comments       Comment[]
+  likes          Like[]
+  playlists      Playlist[]
+  subscriptions  Subscription[] @relation("Subscriber")
+  subscribers    Subscription[] @relation("Channel")
+  tweets         Tweet[]
+  watchHistories WatchHistory[]
+
+  @@index([username])
+  @@index([email])
 }
 ```
 
-**Features:**
-
-- Password hashing before save
-- JWT access token generation
-- JWT refresh token generation
-- Password comparison method
+**Key Features:**
+- Unique username and email with indexes
+- Default avatar and cover images
+- Refresh token storage for JWT authentication
+- Cascading relationships for data integrity
+- Bidirectional subscription relationships
 
 ### 4.2 Video Model
 
-```javascript
-{
-  videoFile: {
-    url: String (Cloudinary URL),
-    public_id: String (Cloudinary ID)
-  },
-  thumbnail: {
-    url: String (Cloudinary URL),
-    public_id: String (Cloudinary ID)
-  },
-  title: String (required),
-  description: String (optional),
-  views: Number (default: 0),
-  duration: Number (required, in seconds),
-  isPublished: Boolean (default: true),
-  owner: ObjectId (references User),
-  timestamps: { createdAt, updatedAt }
+```prisma
+model Video {
+  id                Int      @id @default(autoincrement())
+  videoFileUrl      String
+  videoFilePublicId String
+  thumbnailUrl      String
+  thumbnailPublicId String
+  title             String
+  description       String?
+  views             Int      @default(0)
+  duration          Float
+  isPublished       Boolean  @default(true)
+  userId            Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  likes          Like[]
+  playlistVideos PlaylistVideo[]
+  watchHistories WatchHistory[]
+
+  @@index([userId])
+  @@index([createdAt])
 }
 ```
 
-**Features:**
-
-- Aggregate pagination support
+**Key Features:**
+- Stores Cloudinary URLs and public IDs for cleanup
 - View count tracking
 - Publish/unpublish toggle
+- Cascading delete when user is deleted
+- Indexed by user and creation date
 
 ### 4.3 Comment Model
 
-```javascript
-{
-  content: String (required),
-  owner: ObjectId (references User),
-  video: ObjectId (references Video),
-  timestamps: { createdAt, updatedAt }
+```prisma
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  videoId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  likes Like[]
+
+  @@index([videoId])
+  @@index([userId])
 }
 ```
 
-**Features:**
+**Key Features:**
+- Nested comments on videos
+- Likes on comments
+- Cascading delete with user and video
 
-- Aggregate pagination for comment threads
-- User and video relationship tracking
+### 4.4 Like Model (Polymorphic)
 
-### 4.4 Subscription Model
+```prisma
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  videoId   Int?
+  commentId Int?
+  tweetId   Int?
+  createdAt DateTime @default(now())
 
-```javascript
-{
-  subscriber: ObjectId (references User - the one subscribing),
-  channel: ObjectId (references User - the channel being subscribed to),
-  timestamps: { createdAt, updatedAt }
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video   Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  tweet   Tweet?   @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  // Unique constraints
+  @@unique([userId, videoId])
+  @@unique([userId, commentId])
+  @@unique([userId, tweetId])
+  @@index([userId])
 }
 ```
 
-**Features:**
+**Key Features:**
+- Polymorphic design (can like videos, comments, or tweets)
+- Unique constraints prevent duplicate likes
+- Toggle functionality (add/remove like)
 
-- Many-to-many relationship between users
-- Subscription status tracking
+### 4.5 Subscription Model
 
-### 4.5 Playlist Model
+```prisma
+model Subscription {
+  id           Int      @id @default(autoincrement())
+  subscriberId Int
+  channelId    Int
+  createdAt    DateTime @default(now())
 
-```javascript
-{
-  name: String (required),
-  description: String (required),
-  owner: ObjectId (references User),
-  videos: [ObjectId] (references Video),
-  timestamps: { createdAt, updatedAt }
+  subscriber User @relation("Subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  channel    User @relation("Channel", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, channelId])
+  @@index([subscriberId])
+  @@index([channelId])
 }
 ```
 
-**Features:**
+**Key Features:**
+- Many-to-many user relationship
+- Unique constraint prevents duplicate subscriptions
+- Indexed for efficient subscriber/channel queries
 
-- Video collection management
-- User-owned playlists
+### 4.6 Playlist & PlaylistVideo Models
 
-### 4.6 Tweet Model
+```prisma
+model Playlist {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-```javascript
-{
-  content: String (required),
-  owner: ObjectId (references User),
-  timestamps: { createdAt, updatedAt }
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos PlaylistVideo[]
+
+  @@index([userId])
+}
+
+model PlaylistVideo {
+  id         Int      @id @default(autoincrement())
+  playlistId Int
+  videoId    Int
+  addedAt    DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video    Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, videoId])
 }
 ```
 
-**Features:**
+**Key Features:**
+- Many-to-many relationship between playlists and videos
+- Junction table for video ordering
+- Prevents duplicate videos in same playlist
 
-- Community post/status updates
-- Aggregate pagination support
+### 4.7 Tweet Model
 
-### 4.7 Like Model
+```prisma
+model Tweet {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-```javascript
-{
-  comment: ObjectId (references Comment),
-  video: ObjectId (references Video),
-  tweet: ObjectId (references Tweet),
-  likedBy: ObjectId (references User),
-  timestamps: { createdAt, updatedAt }
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes Like[]
+
+  @@index([userId])
 }
 ```
 
-**Features:**
+**Key Features:**
+- Community posts/status updates
+- Likeable content
+- User-owned tweets
 
-- Polymorphic likes (videos, comments, tweets)
-- User engagement tracking
+### 4.8 WatchHistory Model
+
+```prisma
+model WatchHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  videoId   Int
+  watchedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId])
+}
+```
+
+**Key Features:**
+- Tracks user video viewing
+- Unique constraint (one record per user-video pair)
+- Automatic timestamp tracking
 
 ---
 
 ## 5. API Endpoints & Features
 
-### 5.1 Base URL
+### 5.1 Base URL Structure
 
 ```
-/api/v1
+Production: https://yourdomain.com/api/v1
+Development: http://localhost:8000/api/v1
 ```
 
-### 5.2 Authentication & User Management
+### 5.2 Authentication & User Management (11 endpoints)
 
-#### Public Endpoints (No Authentication Required)
+#### Public Endpoints (No Authentication)
 
 **POST /user/register**
-
-- Register new user account
-- Required fields: username, email, fullname, password
-- Optional: avatar, coverImage (multipart/form-data)
-- Validations:
-  - Username min 3 characters, no spaces
-  - Valid email format
-  - Password strength requirements
-- Response: User details + access token + refresh token
+- Register new user with avatar and cover image
+- Required: username, email, fullname, password, avatar
+- Optional: coverImage
+- Content-Type: multipart/form-data
+- Response: User object + JWT tokens
 
 **POST /user/login**
-
-- User authentication
-- Required: email/username, password
-- Response: User details + access token + refresh token (in cookies)
+- Authenticate user credentials
+- Required: email, password
+- Response: User object + JWT tokens (cookies + body)
 
 **POST /user/refresh-token**
-
 - Obtain new access token using refresh token
 - Required: Refresh token (from cookie or body)
-- Response: New access token + refresh token
+- Response: New access + refresh tokens
 
 #### Protected Endpoints (JWT Required)
 
 **POST /user/logout**
-
-- Logout user and invalidate refresh token
-- Clears authentication cookies
+- Logout and invalidate refresh token
+- Clears HTTP-only cookies
 
 **POST /user/change-password**
-
-- Change user password
+- Update user password
 - Required: oldPassword, newPassword
-- Validates old password before update
+- Validates current password before change
 
 **GET /user/current-user-details**
-
-- Get authenticated user's complete profile
+- Get authenticated user's profile information
 
 **GET /user/c/:username**
-
-- Get user channel profile by username
-- Returns: User info, subscriber count, subscription status
+- Get channel profile with statistics
+- Returns: subscriber count, subscription count, isSubscribed status
 
 **PATCH /user/update-account**
-
-- Update user account details
-- Allowed fields: fullname, email
+- Update fullname and email
+- Required: At least one field to update
 
 **PATCH /user/update-avatar**
-
-- Update user avatar image
-- Required: avatar (multipart/form-data)
-- Uploads to Cloudinary
+- Upload new avatar image
+- Content-Type: multipart/form-data
+- Deletes old Cloudinary image
 
 **PATCH /user/update-cover-image**
-
-- Update user cover image
-- Required: coverImage (multipart/form-data)
-- Uploads to Cloudinary
+- Upload new cover photo
+- Content-Type: multipart/form-data
+- Deletes old Cloudinary image
 
 **GET /user/watch-history**
+- Get user's watch history with video details
+- Returns: Array of videos with user info
 
-- Get user's video watch history
-- Returns paginated list of watched videos
+---
 
-### 5.3 Video Management
+### 5.3 Video Management (6 endpoints)
 
-**GET /videos**
+**GET /videos** 🔒
+- Get all published videos
+- Query params: page, limit (pagination)
+- Returns: Array of videos with owner info
 
-- Get all videos (with pagination)
-- Query params: page, limit, sortBy, sortType
-- Returns: Paginated video list
-
-**POST /videos**
-
-- Upload new video
-- Required: videoFile, thumbnail, title, duration (multipart/form-data)
+**POST /videos** 🔒
+- Upload new video with thumbnail
+- Required: videoFile, thumbnail, title
 - Optional: description
-- Uploads video and thumbnail to Cloudinary
+- Content-Type: multipart/form-data
+- Automatically extracts video duration
 
-**GET /videos/:videoId**
+**GET /videos/:videoId** 🔒
+- Get video details by ID
+- Automatically increments view count
+- Returns: Video with owner, likes count, comments count
 
-- Get video by ID
-- Returns: Complete video details with owner info
-- Increments view count
+**PATCH /videos/:videoId** 🔒
+- Update video details (owner only)
+- Optional: title, description, thumbnail
+- Content-Type: multipart/form-data (if thumbnail)
 
-**DELETE /videos/:videoId**
+**DELETE /videos/:videoId** 🔒
+- Delete video (owner only)
+- Removes files from Cloudinary
+- Cascades to delete comments, likes, etc.
 
-- Delete video
-- Requires: Video ownership verification
-- Removes video from Cloudinary
+**PATCH /videos/toggle/publish/:videoId** 🔒
+- Toggle video publish status (owner only)
+- Toggles between published/unpublished
 
-**PATCH /videos/:videoId**
+---
 
-- Update video details
-- Allowed: title, description, thumbnail
-- Requires: Video ownership verification
+### 5.4 Comment Management (4 endpoints)
 
-**PATCH /videos/toggle/publish/:videoId**
-
-- Toggle video publish status
-- Switches between published/unpublished
-
-### 5.4 Comment System
-
-**GET /comments/:videoId**
-
+**GET /comments/:videoId** 🔒
 - Get all comments for a video
-- Supports pagination
-- Returns: Comments with user details
+- Returns: Comments with user info and like count
 
-**POST /comments/:videoId**
-
+**POST /comments/:videoId** 🔒
 - Add comment to video
-- Required: content (text)
+- Required: content
 
-**DELETE /comments/c/:commentId**
+**PATCH /comments/c/:commentId** 🔒
+- Update comment content (owner only)
+- Required: content
 
-- Delete comment
-- Requires: Comment ownership verification
+**DELETE /comments/c/:commentId** 🔒
+- Delete comment (owner only)
 
-**PATCH /comments/c/:commentId**
+---
 
-- Update comment content
-- Requires: Comment ownership verification
+### 5.5 Like System (4 endpoints)
 
-### 5.5 Subscription System
+**POST /likes/toggle/v/:videoId** 🔒
+- Toggle like on video
+- Returns: { liked: boolean }
 
-**POST /subscriptions/c/:channelId**
+**POST /likes/toggle/c/:commentId** 🔒
+- Toggle like on comment
+- Returns: { liked: boolean }
 
-- Toggle subscription to a channel
-- Subscribe if not subscribed, unsubscribe if already subscribed
+**POST /likes/toggle/t/:tweetId** 🔒
+- Toggle like on tweet
+- Returns: { liked: boolean }
 
-**GET /subscriptions/c/:channelId**
+**GET /likes/videos** 🔒
+- Get all videos liked by current user
+- Returns: Array of liked videos with details
 
-- Get all subscribers of a channel
-- Returns: Subscriber list with details
+---
 
-**GET /subscriptions/u/:subscriberId**
+### 5.6 Subscription Management (3 endpoints)
 
-- Get all channels a user is subscribed to
-- Returns: Subscribed channel list
+**POST /subscriptions/c/:channelId** 🔒
+- Subscribe/unsubscribe to channel
+- Returns: { subscribed: boolean }
 
-### 5.6 Playlist Management
+**GET /subscriptions/c/:channelId** 🔒
+- Get channel's subscribers list
+- Returns: Subscribers array with count
 
-**POST /playlist**
+**GET /subscriptions/u/:subscriberId** 🔒
+- Get user's subscribed channels
+- Returns: Subscriptions array with count
 
+---
+
+### 5.7 Playlist Management (7 endpoints)
+
+**POST /playlist** 🔒
 - Create new playlist
 - Required: name, description
 
-**GET /playlist/user/:userId**
+**GET /playlist/user/:userId** 🔒
+- Get all playlists for a user
+- Returns: Playlists with video count
 
-- Get all playlists created by a user
+**GET /playlist/:playlistId** 🔒
+- Get playlist details with videos
+- Returns: Playlist with video array
 
-**GET /playlist/:playlistId**
+**PATCH /playlist/:playlistId** 🔒
+- Update playlist (owner only)
+- Optional: name, description
 
-- Get playlist by ID with all videos
+**DELETE /playlist/:playlistId** 🔒
+- Delete playlist (owner only)
 
-**PATCH /playlist/:playlistId**
+**POST /playlist/:playlistId/:videoId** 🔒
+- Add video to playlist (owner only)
 
-- Update playlist details
-- Allowed: name, description
-- Requires: Playlist ownership
+**DELETE /playlist/:playlistId/:videoId** 🔒
+- Remove video from playlist (owner only)
 
-**DELETE /playlist/:playlistId**
+---
 
-- Delete playlist
-- Requires: Playlist ownership
+### 5.8 Tweet Management (4 endpoints)
 
-**PATCH /playlist/add/:videoId/:playlistId**
-
-- Add video to playlist
-- Requires: Playlist ownership
-
-**PATCH /playlist/remove/:videoId/:playlistId**
-
-- Remove video from playlist
-- Requires: Playlist ownership
-
-### 5.7 Tweet/Community Posts
-
-**POST /tweets**
-
-- Create new tweet
+**POST /tweets** 🔒
+- Create new tweet/post
 - Required: content
 
-**GET /tweets/user/:userId**
+**GET /tweets/user/:userId** 🔒
+- Get all tweets by user
+- Returns: Tweets with user info and likes
 
-- Get all tweets by a user
-- Supports pagination
+**PATCH /tweets/:tweetId** 🔒
+- Update tweet (owner only)
+- Required: content
 
-**PATCH /tweets/:tweetId**
+**DELETE /tweets/:tweetId** 🔒
+- Delete tweet (owner only)
 
-- Update tweet content
-- Requires: Tweet ownership
+---
 
-**DELETE /tweets/:tweetId**
+### 5.9 Dashboard Analytics (2 endpoints)
 
-- Delete tweet
-- Requires: Tweet ownership
-
-### 5.8 Like System
-
-**POST /likes/toggle/v/:videoId**
-
-- Toggle like on video
-
-**POST /likes/toggle/c/:commentId**
-
-- Toggle like on comment
-
-**POST /likes/toggle/t/:tweetId**
-
-- Toggle like on tweet
-
-**GET /likes/videos**
-
-- Get all liked videos by current user
-
-### 5.9 Dashboard & Analytics
-
-**GET /dashboard/stats**
-
+**GET /dashboard/stats** 🔒
 - Get channel statistics
-- Returns: Total views, subscribers, videos, likes
+- Returns: totalVideos, totalViews, totalSubscribers, totalLikes
 
-**GET /dashboard/videos**
-
+**GET /dashboard/videos** 🔒
 - Get all videos uploaded by current user
-- Includes statistics for each video
+- Returns: Array of user's videos with stats
 
-### 5.10 Health Check
+---
+
+### 5.10 Health Check (1 endpoint)
 
 **GET /healthcheck**
-
-- API health check endpoint
-- Returns: Service status
-
----
-
-## 6. Security Features
-
-### 6.1 Authentication & Authorization
-
-- **JWT-based Authentication:** Secure token-based auth system
-- **Access Tokens:** Short-lived tokens (configurable expiry)
-- **Refresh Tokens:** Long-lived tokens for obtaining new access tokens
-- **Password Hashing:** Bcrypt with salt rounds (10)
-- **Cookie Security:** HTTP-only, secure cookies for token storage
-
-### 6.2 Input Validation
-
-- Request body validation for all endpoints
-- MongoDB ObjectId validation
-- File type and size validation
-- Email format validation
-- Username format validation (no spaces, min length)
-- **Comprehensive Password Validation:**
-  - Length: 8-16 characters
-  - Must include: uppercase, lowercase, number
-  - Allowed special characters: !@#$
-  - Pattern-based validation with detailed error messages
-- **Parameter Normalization:** Automatic username trimming and lowercasing in URL parameters
-
-### 6.3 Middleware Protection
-
-- JWT verification middleware
-- Owner verification for resource modifications
-- File upload size limits (16kb for JSON, configurable for files)
-- CORS configuration for allowed origins
-
-### 6.4 Error Handling
-
-- Centralized error handling middleware
-- Custom ApiError class for consistent error responses
-- Proper HTTP status codes
-- Sensitive information filtering in error messages
-- **TypeScript type safety** for enhanced error prevention and debugging
+- Check API server status
+- No authentication required
+- Returns: { status: "OK", message: "Server is running" }
 
 ---
 
-## 7. File Upload & Storage
+## 6. Security Implementation
 
-### 7.1 Supported File Types
+### 6.1 Authentication Flow
 
-- **Videos:** MP4, AVI, MOV, etc.
-- **Images:** JPEG, PNG, WebP (avatars, thumbnails, cover images)
+1. **Registration:**
+   - Validate input data
+   - Hash password with bcrypt (10 rounds)
+   - Upload avatar/cover to Cloudinary
+   - Create user in database
+   - Generate JWT tokens
+   - Set HTTP-only cookies
 
-### 7.2 Storage Strategy
+2. **Login:**
+   - Find user by email
+   - Compare password hash
+   - Generate new JWT tokens
+   - Update refresh token in database
+   - Set HTTP-only cookies
 
-- **Service:** Cloudinary cloud storage
-- **Upload Process:**
-  1. File received via Multer middleware
-  2. Temporary storage in local `/public/temp` directory
-  3. Upload to Cloudinary with unique public_id
-  4. Local file deletion after successful upload
-  5. Cloudinary URL stored in database
+3. **Token Refresh:**
+   - Extract refresh token from cookie
+   - Verify JWT signature
+   - Check token in database
+   - Generate new tokens
+   - Update database
 
-### 7.3 File Management Features
+4. **Protected Routes:**
+   - Extract access token from cookie/header
+   - Verify JWT signature
+   - Decode user ID from payload
+   - Attach user object to request
+   - Proceed to controller
 
-- Automatic file cleanup on failed uploads
-- Old file deletion when updating (avatar, cover, thumbnail)
-- Video duration extraction
-- Thumbnail generation support
+### 6.2 Authorization
 
----
+- **Owner-based permissions:** Users can only modify/delete their own resources
+- **Resource validation:** Verify resource exists and belongs to user
+- **Middleware protection:** All sensitive routes behind authentication
 
-## 8. Pagination & Performance
+### 6.3 Input Validation
 
-### 8.1 Pagination Implementation
+- **Request body validation:** Joi/custom validators for all inputs
+- **File validation:** Size, type, and required field checks
+- **Parameter sanitization:** Username normalization (lowercase, trim)
+- **SQL injection prevention:** Prisma parameterized queries
 
-- **Plugin:** mongoose-aggregate-paginate-v2
-- **Default Page Size:** 10 items (configurable)
-- **Pagination Response:**
-  ```javascript
-  {
-    docs: [...items],
-    totalDocs: Number,
-    limit: Number,
-    page: Number,
-    totalPages: Number,
-    hasNextPage: Boolean,
-    hasPrevPage: Boolean,
-    nextPage: Number | null,
-    prevPage: Number | null
-  }
-  ```
+### 6.4 File Upload Security
 
-### 8.2 Performance Optimizations
-
-- Database indexing on frequently queried fields (username, email)
-- Aggregate pipelines for complex queries
-- Pagination for large result sets
-- Efficient MongoDB queries with proper projections
-- Cloudinary CDN for media delivery
+- **Size limits:** Videos (100MB), Images (10MB)
+- **Type validation:** MIME type checking
+- **Cloudinary upload:** Server-side upload (not client-direct)
+- **Cleanup:** Delete local temp files after upload
 
 ---
 
-## 9. Error Handling & Logging
+## 7. Database Design Principles
 
-### 9.1 Error Response Format
+### 7.1 Normalization
 
-```javascript
-{
-  success: false,
-  message: "Error description",
-  errors: [...details],
-  statusCode: Number
-}
-```
+- **3NF (Third Normal Form):** Eliminate data redundancy
+- **Referential integrity:** Foreign keys with cascade rules
+- **Unique constraints:** Prevent duplicate data
 
-### 9.2 Success Response Format
+### 7.2 Indexing Strategy
 
-```javascript
-{
-  success: true,
-  message: "Success message",
-  data: {...response data},
-  statusCode: Number
-}
-```
+- **Primary keys:** Auto-increment integers
+- **Unique indexes:** username, email, unique combinations
+- **Foreign key indexes:** All relationship columns
+- **Query optimization:** Index frequently queried columns
 
-### 9.3 Error Types
+### 7.3 Relationships
 
-- **400 Bad Request:** Invalid input data
-- **401 Unauthorized:** Missing or invalid authentication
-- **403 Forbidden:** Insufficient permissions
-- **404 Not Found:** Resource not found
-- **409 Conflict:** Duplicate resource (username, email)
-- **500 Internal Server Error:** Server-side errors
+- **One-to-Many:** User → Videos, User → Comments
+- **Many-to-Many:** Users ↔ Users (subscriptions), Playlists ↔ Videos
+- **Polymorphic:** Likes (videos/comments/tweets)
+
+### 7.4 Data Integrity
+
+- **Cascading deletes:** Remove related data when parent deleted
+- **Unique constraints:** Prevent duplicate likes, subscriptions
+- **Not null constraints:** Required fields enforced
+- **Default values:** Sensible defaults for optional fields
 
 ---
 
-## 10. Environment Configuration
+## 8. Environment Configuration
 
-### 10.1 Required Environment Variables
+### 8.1 Required Environment Variables
 
 ```env
-# Server Configuration
+# Server
 PORT=8000
+NODE_ENV=development|production
 CORS_ORIGIN=*
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/viztube
+DATABASE_URL="postgresql://user:password@host:5432/viztube?schema=public"
 
-# JWT Configuration
-ACCESS_TOKEN_SECRET=your-access-token-secret
+# JWT
+ACCESS_TOKEN_SECRET=<strong-random-string-32+chars>
 ACCESS_TOKEN_EXPIRY=15m
-REFRESH_TOKEN_SECRET=your-refresh-token-secret
+REFRESH_TOKEN_SECRET=<strong-random-string-32+chars>
 REFRESH_TOKEN_EXPIRY=7d
 
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=<your-cloud-name>
+CLOUDINARY_API_KEY=<your-api-key>
+CLOUDINARY_API_SECRET=<your-api-secret>
 ```
 
----
-
-## 11. Development & Deployment
-
-### 11.1 Development Setup
+### 8.2 Development Setup
 
 ```bash
 # Install dependencies
 npm install
 
-# Run development server with hot reload (TypeScript)
-npm run dev
+# Generate Prisma Client
+npx prisma generate
 
-# Build TypeScript to JavaScript
+# Run migrations
+npx prisma migrate dev
+
+# Start development server
+npm run dev
+```
+
+### 8.3 Production Setup
+
+```bash
+# Build TypeScript
 npm run build
 
-# Run production server (compiled JavaScript)
+# Deploy migrations
+npx prisma migrate deploy
+
+# Start production server
 npm start
 ```
 
-### 11.2 Project Scripts
+---
 
-- **npm run dev:** Start development server with tsx (TypeScript execution)
-- **npm run build:** Compile TypeScript to JavaScript (output: dist/)
-- **npm start:** Start production server from compiled files
-- **npm test:** Run test suite (to be implemented)
+## 9. API Response Standards
 
-### 11.3 Code Quality Tools
+### 9.1 Success Response Format
 
-- **TypeScript:** Static type checking with strict mode enabled
-- **ESLint:** JavaScript/TypeScript linting with @eslint/js v9.39.0
-- **Prettier:** Code formatting v3.6.2
-- **TSConfig:** Configured for ES2022 target with NodeNext module resolution
-- Configured ignore files (.prettierignore, .gitignore)
+```json
+{
+  "statusCode": 200,
+  "data": { /* response data */ },
+  "message": "Success message",
+  "success": true
+}
+```
+
+### 9.2 Error Response Format
+
+```json
+{
+  "statusCode": 400,
+  "data": null,
+  "message": "Error message",
+  "success": false,
+  "errors": []
+}
+```
+
+### 9.3 HTTP Status Codes
+
+- **200:** Success
+- **201:** Created
+- **400:** Bad Request (validation errors)
+- **401:** Unauthorized (invalid/missing token)
+- **403:** Forbidden (insufficient permissions)
+- **404:** Not Found
+- **409:** Conflict (duplicate data)
+- **500:** Internal Server Error
 
 ---
 
-## 12. Future Enhancements
+## 10. Performance Optimization
 
-### 12.1 Planned Features
+### 10.1 Database
 
-- [ ] Video streaming with adaptive bitrate
-- [ ] Real-time notifications system
-- [ ] Advanced search and filtering
-- [ ] Video recommendations algorithm
-- [ ] Content moderation system
-- [ ] Analytics dashboard for creators
+- Strategic indexing on foreign keys and query fields
+- Connection pooling via Prisma
+- Efficient joins using Prisma's include
+- Pagination for large datasets
+
+### 10.2 File Storage
+
+- Cloudinary CDN for global content delivery
+- Automatic format optimization
+- Responsive image transformations
+- Video streaming support
+
+### 10.3 Caching (Future Enhancement)
+
+- Redis for session management
+- Cache frequently accessed data
+- Invalidate on updates
+
+---
+
+## 11. Testing Strategy
+
+### 11.1 Manual Testing
+
+- Postman collection with 40+ pre-configured requests
+- Environment variables for easy switching
+- Auto-save tokens and IDs
+
+### 11.2 Automated Testing (Roadmap)
+
+- Unit tests for utilities and helpers
+- Integration tests for API endpoints
+- E2E tests for complete user flows
+- Test coverage >80%
+
+---
+
+## 12. Deployment Architecture
+
+### 12.1 Recommended Platforms
+
+- **Backend:** Render, Railway, Heroku, AWS EC2
+- **Database:** Neon, Supabase, AWS RDS, Railway PostgreSQL
+- **Media:** Cloudinary (generous free tier)
+
+### 12.2 CI/CD Pipeline (Recommended)
+
+```
+GitHub → Actions → Build → Test → Deploy → Production
+```
+
+---
+
+## 13. Monitoring & Maintenance
+
+### 13.1 Logging
+
+- Console logging for development
+- Structured logging for production (Winston, Pino)
+- Error tracking (Sentry, LogRocket)
+
+### 13.2 Metrics
+
+- API response times
+- Error rates
+- Database query performance
+- User engagement metrics
+
+---
+
+## 14. Future Enhancements
+
+### Phase 2 Features
+
+- [ ] Real-time notifications (WebSockets)
 - [ ] Video transcoding pipeline
+- [ ] Full-text search (PostgreSQL full-text)
+- [ ] Content recommendations
+- [ ] Rate limiting & throttling
+- [ ] Redis caching layer
+
+### Phase 3 Features
+
 - [ ] Live streaming support
+- [ ] Video chapters & timestamps
+- [ ] Playlist collaboration
+- [ ] Advanced analytics
+- [ ] Content moderation tools
 - [ ] Multi-language support
-- [ ] Rate limiting and API throttling
-
-### 12.2 Technical Improvements
-
-- [ ] Implement comprehensive test suite (unit, integration, e2e)
-- [ ] Add API documentation (Swagger/OpenAPI)
-- [ ] Implement Redis caching layer
-- [ ] Set up CI/CD pipeline
-- [ ] Add monitoring and logging (Winston, Morgan)
-- [ ] Implement message queue for async tasks (Bull, RabbitMQ)
-- [ ] Database migration system
-- [ ] API versioning strategy
-- [ ] WebSocket for real-time features
-- [ ] GraphQL alternative endpoint
-
-### 12.3 Recently Completed
-
-- [x] **TypeScript Migration:** Complete migration from JavaScript to TypeScript for improved type safety and developer experience
-- [x] **Enhanced Validation System:** Comprehensive password validation with detailed requirements
-- [x] **Parameter Normalization Middleware:** Automatic sanitization of URL parameters
-- [x] **Modular Configuration:** Separated configuration files for cookie options and pagination settings
-- [x] **Type Definitions:** Custom TypeScript types for Cloudinary responses, Express extensions, and environment variables
-- [x] **Development Tooling:** Integrated tsx, ts-node-dev for seamless TypeScript development workflow
 
 ---
 
-## 13. API Usage Examples
+## 15. Technical Debt & Known Limitations
 
-### 13.1 User Registration
+### Current Limitations
 
-```bash
-POST /api/v1/user/register
-Content-Type: multipart/form-data
+- No rate limiting (add Express rate limit)
+- No video transcoding (videos uploaded as-is)
+- Basic pagination (no cursor-based)
+- No search functionality
+- No email verification
+- No real-time features
 
-username: johndoe
-email: john@example.com
-fullname: John Doe
-password: SecurePass123!
-avatar: [file]
-coverImage: [file]
-```
+### Refactoring Opportunities
 
-### 13.2 User Login
-
-```bash
-POST /api/v1/user/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "SecurePass123!"
-}
-```
-
-### 13.3 Upload Video
-
-```bash
-POST /api/v1/videos
-Authorization: Bearer <access_token>
-Content-Type: multipart/form-data
-
-title: My First Video
-description: This is an awesome video
-duration: 120
-videoFile: [file]
-thumbnail: [file]
-```
-
-### 13.4 Get Videos with Pagination
-
-```bash
-GET /api/v1/videos?page=1&limit=10&sortBy=createdAt&sortType=desc
-Authorization: Bearer <access_token>
-```
+- Extract business logic into service layer
+- Add comprehensive test suite
+- Implement caching strategy
+- Add API documentation (Swagger/OpenAPI)
 
 ---
 
-## 14. Testing Strategy
+## 16. Documentation
 
-### 14.1 Testing Levels (To Be Implemented)
+### Available Documentation
 
-- **Unit Tests:** Individual function and method testing
-- **Integration Tests:** API endpoint testing
-- **E2E Tests:** Complete user flow testing
-- **Load Tests:** Performance and scalability testing
-
-### 14.2 Test Coverage Goals
-
-- Minimum 80% code coverage
-- All critical paths tested
-- Edge cases and error scenarios covered
+1. **README.md** - Project overview and setup
+2. **API_DOCUMENTATION.md** - Complete endpoint reference
+3. **ARCHITECTURE.md** - System architecture details
+4. **POSTMAN_COLLECTION_README.md** - API testing guide
+5. **PRD.md** - This document
 
 ---
 
-## 15. Compliance & Best Practices
+## 17. Support & Contribution
 
-### 15.1 Code Standards
+### Getting Help
 
-- **TypeScript with strict mode enabled** for maximum type safety
-- ES2022+ syntax with NodeNext module resolution
-- Modular architecture with clear separation of concerns
-- MVC pattern implementation
-- DRY (Don't Repeat Yourself) principles
-- Proper error handling and validation
-- Consistent code formatting with Prettier
-- ESLint rules for code quality enforcement
+- GitHub Issues for bug reports
+- GitHub Discussions for questions
+- Documentation for implementation details
 
-### 15.2 Security Best Practices
+### Contributing
 
-- Never store passwords in plain text
-- Validate all user inputs
-- Use parameterized queries (Mongoose handles this)
-- Implement rate limiting (planned)
-- Regular security audits
-- Keep dependencies updated
-
-### 15.3 Data Privacy
-
-- User passwords never exposed in responses
-- Refresh tokens stored securely
-- CORS configuration for trusted origins
-- Secure file upload handling
+- Fork repository
+- Create feature branch
+- Follow code style (ESLint + Prettier)
+- Add tests for new features
+- Submit pull request
 
 ---
 
-## 16. Support & Maintenance
+## 18. License & Credits
 
-### 16.1 Version Control
+**License:** ISC  
+**Author:** Nishant Sharma  
+**Repository:** [github.com/Nishant-444/Viztube](https://github.com/Nishant-444/Viztube)
 
-- **Repository:** https://github.com/Nishant-444/Viztube
-- **Branch Strategy:** Main branch for production-ready code
-- **Commit Guidelines:** Descriptive commit messages
+### Acknowledgments
 
-### 16.2 Documentation
-
-- TypeScript type definitions for enhanced IntelliSense support
-- Code comments for complex logic
-- JSDoc-style comments for functions
-- Comprehensive PRD (Product Requirements Document)
-- Detailed README with setup instructions and API overview
-- Postman collection for API testing (Viztube-v2.postman_collection.json)
-- Postman collection documentation (POSTMAN_COLLECTION_README.md)
+- Express.js team
+- Prisma team
+- PostgreSQL community
+- Cloudinary
+- TypeScript team
 
 ---
 
-## 17. Dependencies
-
-### 17.1 Production Dependencies
-
-```json
-{
-  "bcrypt": "^6.0.0",
-  "cloudinary": "^2.8.0",
-  "cookie-parser": "^1.4.7",
-  "cors": "^2.8.5",
-  "dotenv": "^17.2.3",
-  "express": "^5.1.0",
-  "jsonwebtoken": "^9.0.2",
-  "mongoose": "^8.19.1",
-  "mongoose-aggregate-paginate-v2": "^1.1.4",
-  "multer": "^2.0.2"
-}
-```
-
-### 17.2 Development Dependencies
-
-```json
-{
-  "@eslint/js": "^9.39.0",
-  "@types/bcrypt": "^6.0.0",
-  "@types/cookie-parser": "^1.4.10",
-  "@types/cors": "^2.8.19",
-  "@types/express": "^5.0.6",
-  "@types/jsonwebtoken": "^9.0.10",
-  "@types/multer": "^2.0.0",
-  "@types/node": "^25.0.3",
-  "eslint": "^9.39.0",
-  "nodemon": "^3.1.11",
-  "prettier": "^3.6.2",
-  "ts-node": "^10.9.2",
-  "ts-node-dev": "^2.0.0",
-  "tsx": "^4.21.0",
-  "typescript": "^5.9.3"
-}
-```
-
----
-
-## 18. Glossary
-
-- **JWT:** JSON Web Token - A secure method for transmitting information
-- **Bcrypt:** Password hashing algorithm
-- **Cloudinary:** Cloud-based media management platform
-- **Multer:** Node.js middleware for handling multipart/form-data
-- **Mongoose:** MongoDB ODM (Object Data Modeling) library
-- **CORS:** Cross-Origin Resource Sharing
-- **API:** Application Programming Interface
-- **REST:** Representational State Transfer
-- **ODM:** Object Data Modeling
-- **CDN:** Content Delivery Network
-
----
-
-## 19. Contact & Contributors
-
-**Primary Author:** Nishant Sharma  
-**Project Repository:** [Viztube](https://github.com/Nishant-444/Viztube)  
-**License:** ISC
-
----
-
-## 20. Document Revision History
-
-| Version | Date              | Author         | Changes                                                                       |
-| ------- | ----------------- | -------------- | ----------------------------------------------------------------------------- |
-| 1.0.0   | November 10, 2025 | Nishant Sharma | Initial PRD creation                                                          |
-| 1.1.0   | January 6, 2026   | Nishant Sharma | Updated with TypeScript migration, enhanced validation, modular configuration |
-
----
-
-## 21. Technical Achievements & Highlights
-
-### 21.1 Architecture Improvements
-
-- **Full TypeScript Migration:** Converted entire codebase from JavaScript to TypeScript, providing compile-time type checking, better IDE support, and reduced runtime errors
-- **Type-Safe Configurations:** Created dedicated configuration modules (cookieOptions, paginationOptions) with proper TypeScript interfaces
-- **Custom Type Definitions:** Implemented comprehensive type definitions for:
-  - Cloudinary API responses
-  - Express request/response extensions
-  - Environment variables
-  - MongoDB document schemas
-
-### 21.2 Enhanced Security Features
-
-- **Advanced Password Validation:** Multi-criteria validation system with detailed error feedback
-- **Parameter Sanitization:** Automatic normalization middleware for URL parameters preventing injection attacks
-- **Environment-aware Cookie Security:** Dynamic cookie configuration based on NODE_ENV
-- **Strict Type Checking:** TypeScript strict mode prevents type-related vulnerabilities
-
-### 21.3 Developer Experience Improvements
-
-- **Hot Reload Development:** Integrated tsx for instant TypeScript execution during development
-- **Build Pipeline:** Configured TypeScript compiler with optimized settings for Node.js
-- **Code Quality Enforcement:** Combined ESLint and Prettier with TypeScript support
-- **IntelliSense Support:** Enhanced autocomplete and type hints throughout the codebase
-- **Comprehensive API Documentation:** Postman collection with detailed endpoint documentation
-
-### 21.4 Project Structure Organization
-
-```
-src/
-├── config/          # Centralized configuration modules
-│   ├── cookieOptions.ts
-│   ├── db.ts
-│   └── paginationOptions.ts
-├── controllers/     # Business logic handlers (9 controllers)
-├── middlewares/     # Request processing middlewares (4 middlewares)
-├── models/          # MongoDB schemas (7 models)
-├── routes/          # API route definitions (9 route files)
-├── types/           # TypeScript type definitions
-│   ├── cloudinary.types.ts
-│   ├── environment.d.ts
-│   └── express.d.ts
-├── utils/           # Reusable utility functions
-├── validators/      # Input validation logic
-│   ├── auth.validators.ts
-│   └── file.validators.ts
-├── app.ts           # Express application setup
-├── constants.ts     # Application-wide constants
-└── index.ts         # Application entry point
-```
-
----
-
-**End of Document**
+**Document Version:** 2.0.0  
+**Last Updated:** January 9, 2026  
+**Status:** ✅ Complete & Production Ready
