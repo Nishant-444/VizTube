@@ -37,15 +37,15 @@ import dashboardRouter from './routes/dashboard.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 // routes
-app.use('/api/v1/healthcheck', healthcheckRouter);
-app.use('/api/v1/user', userRouter);
-app.use('/api/v1/videos', videoRouter);
-app.use('/api/v1/tweets', tweetRouter);
-app.use('/api/v1/comments', commentRouter);
-app.use('/api/v1/likes', likeRouter);
-app.use('/api/v1/subscriptions', subscriptionRouter);
-app.use('/api/v1/playlist', playlistRouter);
-app.use('/api/v1/dashboard', dashboardRouter);
+app.use('/api/v2/healthcheck', healthcheckRouter);
+app.use('/api/v2/user', userRouter);
+app.use('/api/v2/videos', videoRouter);
+app.use('/api/v2/tweets', tweetRouter);
+app.use('/api/v2/comments', commentRouter);
+app.use('/api/v2/likes', likeRouter);
+app.use('/api/v2/subscriptions', subscriptionRouter);
+app.use('/api/v2/playlist', playlistRouter);
+app.use('/api/v2/dashboard', dashboardRouter);
 
 // error handler
 app.use(errorHandler);
