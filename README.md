@@ -2,7 +2,6 @@
 
 > A complete YouTube-like backend built with TypeScript, PostgreSQL, and modern tools.
 
-![VizTube Banner](https://via.placeholder.com/800x200/4A90E2/FFFFFF?text=VizTube+Backend+API)
 
 ## What is this?
 
