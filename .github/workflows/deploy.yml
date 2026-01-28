@@ -3,7 +3,7 @@ name: Deploy to AWS
 on:
   push:
     branches:
-      - main  # Trigger on push to main branch
+      - master  # Trigger on push to main branch
 
 jobs:
   deploy:
