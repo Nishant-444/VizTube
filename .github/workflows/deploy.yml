@@ -1,27 +1,20 @@
-name: Deploy to AWS
-
-on:
-  push:
-    branches:
-      - master  # Trigger on push to main branch
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Deploy via SSH
+- name: Deploy via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          # 1. Load NVM (Node Version Manager) explicitly
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
           cd ~/VizTube
-          git pull origin main
+          
+          # 2. Pull from MASTER, not main
+          git pull origin master
+          
+          # 3. Now these commands will work
           npm install
           npx prisma generate
           npx tsc --noEmitOnError false
