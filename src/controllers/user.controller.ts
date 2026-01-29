@@ -76,9 +76,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   try {
     avatarUpload = await uploadOnCloudinary(avatarLocalPath);
+    fs.unlinkSync(avatarLocalPath);
     if (coverLocalPath) {
       coverImageUpload = await uploadOnCloudinary(coverLocalPath);
     }
+    fs.unlinkSync(coverLocalPath);
   } catch (error) {
     throw new ApiError(500, 'Failed to upload images');
   }
@@ -263,7 +265,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   const avatarUpload = await uploadOnCloudinary(avatarLocalPath);
   if (!avatarUpload) throw new ApiError(500, 'Error uploading avatar');
-
+  fs.unlinkSync(avatarLocalPath);
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: { avatar: avatarUpload.url },
@@ -282,7 +284,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverUpload = await uploadOnCloudinary(coverLocalPath);
   if (!coverUpload) throw new ApiError(500, 'Error uploading cover');
-
+  fs.unlinkSync(coverLocalPath);
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: { coverImage: coverUpload.url },
