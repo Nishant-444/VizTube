@@ -1,525 +1,633 @@
-# VizTube - Video Platform Backend
+# VizTube - Production Video Platform Backend
 
-> A complete YouTube-like backend built with TypeScript, PostgreSQL, and modern tools.
+**Version:** 2.0.0  
+**Status:** Production (V2)  
+**Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, AWS
 
-
-## What is this?
-
-Hey there! VizTube is a fully working backend for a video sharing platform (think YouTube). I built it using TypeScript, PostgreSQL, and all the modern stuff developers love.
-
-Whether you're learning backend development, looking for a project to reference, or just curious about how video platforms work - this is for you!
-
-**Status: Complete and ready to use!**
-
----
-
-## What can it do?
-
-Think about everything you do on YouTube - this backend handles all of that:
-
-**User Stuff:**
-
-- Sign up with your email and upload a profile picture
-- Login securely (using JWT tokens - fancy but secure!)
-- Change your password when you forget it
-- Update your profile info and pictures
-- See what videos you've watched
-
-**Video Features:**
-
-- Upload videos with thumbnails
-- Edit your video details (title, description)
-- Make videos public or private
-- Delete videos you don't want anymore
-- Track how many people watched your videos
-
-**Social Features:**
-
-- Like videos, comments, and posts
-- Comment on videos
-- Subscribe to channels (and unsubscribe if you want)
-- Create community posts (like tweets)
-
-**Organizing Content:**
-
-- Create playlists to save your favorite videos
-- Add or remove videos from playlists
-- See your watch history
-
-**For Content Creators:**
-
-- Dashboard showing your channel stats
-- See all your uploaded videos
-- Track total views, subscribers, and likes
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
 
 ---
 
-## What's it built with?
+## Project Overview
 
-Here's the tech stack in simple terms:
+VizTube is a production-grade backend infrastructure for a video-sharing platform, built with enterprise-level architecture and deployed on AWS. The system is architected for high concurrency with sub-200ms API response time targets, featuring secure JWT authentication, Cloudinary CDN integration, and a fully normalized PostgreSQL database.
 
-**Main Technologies:**
+**Live Infrastructure:**
 
-- Node.js (the runtime that makes it all work)
-- TypeScript (JavaScript but with types - helps catch bugs early)
-- Express (handles all the HTTP requests)
-- PostgreSQL (the database where everything is stored)
-- Prisma (makes talking to the database super easy)
-
-**Security & Authentication:**
-
-- JWT tokens for login (keeps you logged in securely)
-- Bcrypt for passwords (encrypts them so they're safe)
-- Cookie handling for storing tokens
-
-**File Storage:**
-
-- Cloudinary (stores all videos and images in the cloud)
-- **Code Quality**: ESLint v9.39.0, Prettier v3.6.2
-- **Database Management**: Prisma Studio, Prisma Migrate
+- **Compute:** AWS EC2 (t3.micro)
+- **Database:** AWS RDS PostgreSQL
+- **CDN:** Cloudinary (100MB video limit)
+- **Security:** Cloudflare DNS/SSL + AWS Security Groups
+- **Process Manager:** PM2 (fork mode)
 
 ---
 
-## Project Structure
+## System Architecture
 
-````
-viztube/
-├── prisma/
-│   ├── schema.prisma              # Database schema with all models
-│   └── migrations/                # Database migration history
-│       ├── migration_lock.toml
-│       └── 20260107053732_add_watch_history/
-│
-├── public/
-│   └── temp/                      # Temporary file storage for uploads
-│
-├── src/
-│   ├── index.ts                   # Application entry point
-│   ├── app.ts                     # Express app configuration
-│   ├── constants.ts               # Application constants
-│   │
-│   ├── config/
-│   │   └── cookieOptions.ts       # Cookie configuration
-│   │
-│   ├── controllers/               # Business logic (∗ as import pattern)
-│   │   ├── user.controller.ts
-│   │   ├── video.controller.ts
----
+```
+Client → Cloudflare (SSL/DNS) → AWS Security Group → Nginx → PM2 → Express → PostgreSQL/Cloudinary
+```
 
-## How the code is organized
+**Request Flow:**
 
-The project has a clean structure - everything has its place:
+1. HTTPS request hits Cloudflare edge network
+2. DNS resolves, SSL terminated at Cloudflare
+3. Traffic proxied to AWS EC2 (Cloudflare IPs whitelisted)
+4. Nginx reverse proxy forwards to localhost:3000
+5. PM2-managed Node.js process handles request
+6. Express routes to controller → Prisma ORM → PostgreSQL
+7. Media uploads stream directly to Cloudinary
 
-![Project Structure](https://via.placeholder.com/600x400/34495E/FFFFFF?text=Clean+Folder+Structure)
+**Key Infrastructure Decisions:**
 
-**Main folders you'll see:**
-
-- `src/` - All the TypeScript code lives here
-  - `controllers/` - The brain of each feature (handles the logic)
-  - `routes/` - Defines all the API endpoints
-  - `middlewares/` - Things that run before your main code (like authentication)
-  - `utils/` - Helper functions used everywhere
-  - `validators/` - Checks if the data you send is correct
-
-- `prisma/` - Database stuff
-  - `schema.prisma` - Defines how your database looks
-  - `migrations/` - History of database changes
-
-- `public/temp/` - Temporary storage for uploaded files
+- **Fork Mode vs Cluster:** Single PM2 instance prevents OOM crashes on 1GB RAM
+- **Cloudflare Flexible SSL:** Simplifies origin server SSL management
+- **Direct Cloudinary Upload:** Reduces server storage overhead
+- **AWS RDS:** Managed backups, automated failover
 
 ---
 
-## The Database
+## Core Technology Stack
 
-The app uses PostgreSQL (a powerful, reliable database) with these main tables:
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.1-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-EC2/RDS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 
-**User** - Stores user info (email, password, avatar, etc.)
+| Layer     | Technology | Version | Purpose                                   |
+| --------- | ---------- | ------- | ----------------------------------------- |
+| Runtime   | Node.js    | v18+    | Server execution environment              |
+| Language  | TypeScript | v5.9.3  | Type safety, compile-time error detection |
+| Framework | Express.js | v5.1.0  | HTTP request handling, middleware         |
+| Database  | PostgreSQL | v14+    | Relational data storage                   |
+| ORM       | Prisma     | v7.2.0  | Type-safe database queries                |
+| Auth      | JWT        | -       | Stateless authentication                  |
+| Storage   | Cloudinary | -       | Video/image CDN                           |
 
-**Video** - All video details (title, URL, views, who uploaded it)
+---
 
-**Comment** - Comments people leave on videos
+## Database Schema
 
-**Like** - Tracks who liked what (videos, comments, or tweets)
+The database follows **Third Normal Form (3NF)** with strategic indexing and cascading deletes.
 
-**Subscription** - Who's subscribed to who
+### Core Tables
 
-**Playlist** - User-created video collections
+**Users**
 
-**Tweet** - Community posts (like Twitter)
+```sql
+id          SERIAL PRIMARY KEY
+username    VARCHAR UNIQUE (indexed)
+email       VARCHAR UNIQUE (indexed)
+fullname    VARCHAR
+password    VARCHAR (bcrypt hashed)
+avatar      VARCHAR (Cloudinary URL)
+coverImage  VARCHAR (Cloudinary URL)
+refreshToken VARCHAR (nullable)
+```
 
-**WatchHistory** - Keeps track of what videos you watched
+**Videos**
 
-Everything is connected properly - if you delete a user, all their videos and comments get deleted too. Smart, right?
+```sql
+id                SERIAL PRIMARY KEY
+userId            INT FK → Users.id (CASCADE DELETE)
+videoFileUrl      VARCHAR (Cloudinary URL)
+videoFilePublicId VARCHAR (for deletion)
+thumbnailUrl      VARCHAR
+thumbnailPublicId VARCHAR
+title             VARCHAR
+description       TEXT
+duration          FLOAT (auto-extracted)
+views             INT DEFAULT 0
+isPublished       BOOLEAN DEFAULT TRUE
+```
+
+**Likes (Polymorphic)**
+
+```sql
+id        SERIAL PRIMARY KEY
+userId    INT FK → Users.id
+videoId   INT FK → Videos.id (nullable)
+commentId INT FK → Comments.id (nullable)
+tweetId   INT FK → Tweets.id (nullable)
+UNIQUE(userId, videoId), UNIQUE(userId, commentId), UNIQUE(userId, tweetId)
+```
+
+**Subscriptions (Self-Referencing Many-to-Many)**
+
+```sql
+id           SERIAL PRIMARY KEY
+subscriberId INT FK → Users.id
+channelId    INT FK → Users.id
+UNIQUE(subscriberId, channelId)
+```
+
+**Relationships:**
+
+- User → Videos (1:N, cascade delete)
+- User → Subscriptions (M:N self-reference)
+- Videos ↔ Playlists (M:N via PlaylistVideos junction table)
+- Likes → Videos/Comments/Tweets (polymorphic, unique constraints)
+
+---
+
+## API Architecture
+
+**Base URL:** `/api/v2`
+
+### Authentication Flow
+
+```
+Registration → Upload to Cloudinary → Hash Password → Store User → Generate JWT
+Login → Verify Password → Generate Tokens → Set HTTP-Only Cookies
+Protected Route → Extract Token → Verify JWT → Attach User to Request
+```
+
+**Token Strategy:**
+
+- **Access Token:** 15-minute expiry, stored in HTTP-only cookie (SameSite=Strict)
+- **Refresh Token:** 7-day expiry, stored in database + cookie
+- **Rotation:** New refresh token issued on every access token renewal
+
+### Endpoint Categories
+
+**1. User Management (11 endpoints)**
+
+```
+POST   /user/register           - Create account with avatar/cover
+POST   /user/login              - Authenticate, issue JWT tokens
+POST   /user/refresh-token      - Renew access token
+POST   /user/logout             - Invalidate refresh token
+POST   /user/change-password    - Update password (old password required)
+GET    /user/current-user-details - Fetch authenticated user profile
+GET    /user/c/:username        - Get channel profile with stats
+PATCH  /user/update-account     - Modify fullname/email
+PATCH  /user/update-avatar      - Replace avatar (deletes old Cloudinary asset)
+PATCH  /user/update-cover-image - Replace cover image
+GET    /user/watch-history      - Retrieve watched videos
+```
+
+**2. Video Operations (6 endpoints)**
+
+```
+GET    /videos                  - List published videos (paginated)
+POST   /videos                  - Upload video + thumbnail (multipart/form-data)
+GET    /videos/:videoId         - Fetch video details, increment views
+PATCH  /videos/:videoId         - Update metadata (owner only)
+DELETE /videos/:videoId         - Remove video + Cloudinary assets (owner only)
+PATCH  /videos/toggle/publish/:videoId - Toggle isPublished flag
+```
+
+**3. Social Interactions (11 endpoints)**
+
+```
+# Comments
+GET    /comments/:videoId       - List video comments
+POST   /comments/:videoId       - Add comment
+PATCH  /comments/c/:commentId   - Edit comment (owner only)
+DELETE /comments/c/:commentId   - Delete comment (owner only)
+
+# Likes (Toggle endpoints - idempotent)
+POST   /likes/toggle/v/:videoId    - Like/unlike video
+POST   /likes/toggle/c/:commentId  - Like/unlike comment
+POST   /likes/toggle/t/:tweetId    - Like/unlike tweet
+GET    /likes/videos               - Get liked videos
+
+# Subscriptions
+POST   /subscriptions/c/:channelId - Subscribe/unsubscribe (toggle)
+GET    /subscriptions/c/:channelId - Get channel subscribers
+GET    /subscriptions/u/:subscriberId - Get user's subscriptions
+```
+
+**4. Content Organization (7 endpoints)**
+
+```
+POST   /playlist                - Create playlist
+GET    /playlist/user/:userId   - List user playlists
+GET    /playlist/:playlistId    - Get playlist with videos
+PATCH  /playlist/:playlistId    - Update name/description (owner only)
+DELETE /playlist/:playlistId    - Delete playlist (owner only)
+POST   /playlist/:playlistId/:videoId - Add video to playlist
+DELETE /playlist/:playlistId/:videoId - Remove video from playlist
+```
+
+**5. Community Posts (4 endpoints)**
+
+```
+POST   /tweets                  - Create post
+GET    /tweets/user/:userId     - Get user posts
+PATCH  /tweets/:tweetId         - Edit post (owner only)
+DELETE /tweets/:tweetId         - Delete post (owner only)
+```
+
+**6. Analytics (2 endpoints)**
+
+```
+GET    /dashboard/stats         - Channel statistics (videos, views, subscribers, likes)
+GET    /dashboard/videos        - User's uploaded videos with metrics
+```
+
+**7. Health Check (1 endpoint)**
+
+```
+GET    /healthcheck             - Server status (no auth required)
+```
+
+---
+
+## Security Implementation
+
+### Authentication & Authorization
+
+**Password Security:**
+
+- Bcrypt hashing (10 salt rounds)
+- Minimum 8 characters (enforced at application layer)
+- Old password required for changes
+
+**JWT Configuration:**
+
+```javascript
+{
+  accessToken: {
+    secret: process.env.ACCESS_TOKEN_SECRET,
+    expiry: "15m",
+    storage: "HTTP-only cookie (SameSite=Strict) + response body"
+  },
+  refreshToken: {
+    secret: process.env.REFRESH_TOKEN_SECRET,
+    expiry: "7d",
+    storage: "HTTP-only cookie + database"
+  }
+}
+```
+
+**Middleware Stack:**
+
+```
+Request → Helmet (security headers)
+        → CORS (whitelisted origins)
+        → Rate Limiter (auth: 10/15min, API: 100/15min)
+        → Body Parser
+        → Cookie Parser
+        → JWT Verification
+        → Route Handler
+        → Error Handler
+```
+
+### Network Security
+
+**AWS Security Group Rules:**
+
+```
+Inbound: Port 80 TCP from Cloudflare IP ranges ONLY
+Outbound: All traffic (RDS + Cloudinary connections)
+```
+
+**Cloudflare Configuration:**
+
+- SSL Mode: Flexible (Client→CF: HTTPS, CF→AWS: HTTP)
+- DDoS Protection: Automatic mitigation
+- Direct IP Access: Blocked (prevents origin exposure)
+
+### Input Validation
+
+**File Uploads:**
+
+- Video: 100MB max, MIME type validation
+- Image: 10MB max, extension whitelist (JPG, PNG)
+- Multer middleware enforces limits
+- Temp files deleted post-upload
+
+**Request Validation:**
+
+- Username: Alphanumeric + underscore, 3-30 chars
+- Email: RFC 5322 compliant
+- Prisma parameterized queries (SQL injection prevention)
+
+---
+
+## Performance Characteristics
+
+### Performance Goals (SLAs)
+
+| Metric                         | Target |
+| ------------------------------ | ------ |
+| API Response (95th percentile) | <200ms |
+| Video Upload (100MB)           | <5s    |
+| Database Query Avg             | <50ms  |
+| CDN First Byte                 | <100ms |
+
+### Optimization Strategies
+
+**Database:**
+
+- Strategic indexes on `userId`, `videoId`, `createdAt`
+- Unique constraints on likes (prevent duplicate queries)
+- Pagination (default 10 items/page)
+- Prisma connection pooling (optimized for single instance)
+
+**Media Delivery:**
+
+- Cloudinary `f_auto` transformation (WebP/MP4 based on browser)
+- Global CDN (200+ edge locations)
+- Video streaming (no full file download)
+
+**Application:**
+
+- PM2 automatic restarts (zero-downtime on crashes)
+- Nginx request buffering (reduces backend load)
+- Gzip compression (text responses)
+
+---
+
+## Deployment Architecture
+
+### Production Environment
+
+**Server Configuration:**
+
+```yaml
+Instance: AWS EC2 t3.micro
+OS: Ubuntu 24.04 LTS
+RAM: 1GB (constraint: fork mode only)
+CPU: 2 vCPU
+Process Manager: PM2 (1 instance, fork mode)
+Web Server: Nginx (reverse proxy, port 80 → 3000)
+```
+
+**PM2 Ecosystem:**
+
+```javascript
+{
+  name: "viztube-api",
+  script: "./dist/index.js",
+  instances: 1,
+  exec_mode: "fork",
+  env: { NODE_ENV: "production", PORT: 3000 }
+}
+```
+
+**Database Configuration:**
+
+- AWS RDS PostgreSQL (managed service)
+- Automated daily backups (7-day retention)
+- SSL/TLS connection enforced
 
 ---
 
 ## Getting Started
 
-Want to run this on your computer? Here's how:
-
-### What you need:
-
-- Node.js installed (version 18 or newer)
-- PostgreSQL database
-- A Cloudinary account (it's free for small projects)
-
-### Step 1: Download the project
+### Prerequisites
 
 ```bash
+Node.js v18+
+PostgreSQL v14+
+Cloudinary account
+```
+
+### Installation
+
+```bash
+# Clone repository
 git clone https://github.com/Nishant-444/Viztube.git
 cd Viztube
-````
 
-### Step 2: Install everything
-
-```bash
+# Install dependencies
 npm install
-```
 
-This will download all the packages the project needs.
+# Configure environment
+cp .env.sample .env
+# Edit .env with your credentials
 
-### Step 3: Set up your environment
-
-Create a file called `.env` and add these:
-
-```env
-# Server Configuration
-PORT=8000
-CORS_ORIGIN=*
-NODE_ENV=development
-
-# Database (PostgreSQL)
-DATABASE_URL="postgresql://username:password@localhost:5432/viztube?schema=public"
-
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# JWT Configuration
-ACCESS_TOKEN_SECRET=your_super_secret_access_token_min_32_characters
-ACCESS_TOKEN_EXPIRY=15m
-REFRESH_TOKEN_SECRET=your_super_secret_refresh_token_min_32_characters
-REFRESH_TOKEN_EXPIRY=7d
-```
-
-> **Note:** See `.env.sample` for a complete template.
-
-4. **Set up the database:**
-
-   ```bash
-   # Generate Prisma Client
-   npx prisma generate
-
-   # Run migrations to create database tables
-   npx prisma migrate dev --name init
-
-   # (Optional) Open Prisma Studio to view database
-   npx prisma studio
-   ```
-
-5. **Build TypeScript:**
-
-   ```bash
-   npm run build
-   ```
-
-6. **Run the server:**
-
-   **Development mode (with hot reload):**
-
-   ```bash
-   npm run dev
-   ```
-
-   **Production mode:**
-
-   ```bash
-   npm start
-   ```
-
-7. **Verify installation:**
-
-   ```bash
-   # Test the health check endpoint
-   curl http://localhost:8000/api/v2/healthcheck
-   ```
-
-   Expected response:
-
-   ```json
-   {
-     "statusCode": 200,
-     "data": {
-       "status": "OK",
-       "message": "Server is running"
-     },
-     "message": "Health check passed",
-     "success": true
-   }
-   ```
-
-```env
-# Server stuff
-PORT=8000
-CORS_ORIGIN=*
-NODE_ENV=development
-
-# Your PostgreSQL database URL
-DATABASE_URL="postgresql://username:password@localhost:5432/viztube?schema=public"
-
-# Cloudinary credentials (get these from cloudinary.com)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# JWT secrets (use long random strings - the longer the better!)
-ACCESS_TOKEN_SECRET=make_this_a_really_long_random_string
-ACCESS_TOKEN_EXPIRY=15m
-REFRESH_TOKEN_SECRET=another_really_long_random_string_different_from_above
-REFRESH_TOKEN_EXPIRY=7d
-```
-
-Don't worry, there's a `.env.sample` file you can copy from!
-
-### Step 4: Set up the database
-
-```bash
-# This creates the database tables
+# Setup database
+npx prisma generate
 npx prisma migrate dev
 
-# (Optional) Open Prisma Studio to see your database in a nice GUI
-npx prisma studio
-```
-
-### Step 5: Build the TypeScript code
-
-```bash
+# Build TypeScript
 npm run build
-```
 
-### Step 6: Start the server
-
-For development (with auto-reload when you change code):
-
-```bash
+# Start development server
 npm run dev
-```
 
-For production:
-
-```bash
+# Production start
 npm start
 ```
 
-### Step 7: Check if it's working
+### Environment Variables
 
-Open your browser or use curl:
+```env
+# Server
+PORT=8000
+NODE_ENV=development
+CORS_ORIGIN=*
 
-```bash
-curl http://localhost:8000/api/v2/healthcheck
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/viztube?schema=public
+
+# JWT (use 256-bit random strings)
+ACCESS_TOKEN_SECRET=<64-char-random-string>
+ACCESS_TOKEN_EXPIRY=15m
+REFRESH_TOKEN_SECRET=<64-char-random-string>
+REFRESH_TOKEN_EXPIRY=7d
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_API_KEY=<api-key>
+CLOUDINARY_API_SECRET=<api-secret>
 ```
 
-You should see a success message! Your API is now running at `http://localhost:8000/api/v2`
+### Verification
+
+```bash
+# Health check
+curl http://localhost:8000/api/v2/healthcheck
+
+# Expected response
+{
+  "statusCode": 200,
+  "data": { "status": "OK", "message": "Server is running" },
+  "success": true
+}
+```
 
 ---
 
-## Testing the API
+## Testing
 
-I've included a Postman collection with 40+ ready-to-use API requests. Just import it and start testing!
-
-**Quick test with curl:**
-
-Register a user:
+### Manual Testing (Postman Collection Included)
 
 ```bash
+# Register user
 curl -X POST http://localhost:8000/api/v2/user/register \
-  -F "username=johndoe" \
-  -F "email=john@example.com" \
-  -F "fullname=John Doe" \
+  -F "username=testuser" \
+  -F "email=test@example.com" \
+  -F "fullname=Test User" \
   -F "password=SecurePass123" \
-  -F "avatar=@/path/to/your/avatar.jpg"
-```
+  -F "avatar=@avatar.jpg"
 
-Login:
-
-```bash
+# Login
 curl -X POST http://localhost:8000/api/v2/user/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"john@example.com","password":"SecurePass123"}'
+  -d '{"email":"test@example.com","password":"SecurePass123"}'
+
+# Upload video (authenticated)
+curl -X POST http://localhost:8000/api/v2/videos \
+  -H "Authorization: Bearer <access-token>" \
+  -F "videoFile=@video.mp4" \
+  -F "thumbnail=@thumb.jpg" \
+  -F "title=Test Video" \
+  -F "description=Test Description"
+```
+
+### Test Coverage (Roadmap)
+
+- [ ] Unit tests (controllers, utils)
+- [ ] Integration tests (API endpoints)
+- [ ] E2E tests (user flows)
+- [ ] Target: 80%+ coverage
+
+---
+
+## Project Structure
+
+```
+viztube/
+├── prisma/
+│   ├── schema.prisma           # Database models (Users, Videos, etc.)
+│   └── migrations/             # Migration history
+├── src/
+│   ├── index.ts                # Application entry point
+│   ├── app.ts                  # Express configuration
+│   ├── controllers/            # Business logic (user, video, comment, etc.)
+│   ├── routes/                 # API route definitions
+│   ├── middlewares/            # Auth, file upload, error handling
+│   ├── utils/                  # ApiResponse, ApiError, Cloudinary helpers
+│   └── validators/             # Input validation schemas
+├── public/temp/                # Temporary upload storage
+├── .env.sample                 # Environment template
+└── ecosystem.config.js         # PM2 configuration
 ```
 
 ---
 
-## API Endpoints
+## Known Limitations & Roadmap
 
-All endpoints start with `/api/v2`
+### Current Constraints
 
-**Authentication (no login needed):**
+1. **No Video Transcoding:** Videos uploaded as-is (no HLS/DASH)
+2. **No Live Streaming:** RTMP ingest not supported
+3. **Basic Pagination:** Offset-based (no cursor pagination)
+4. **No Full-Text Search:** Title/description search unavailable
+5. **No Email Verification:** Users can register without confirmation
 
-- Register: `POST /user/register`
-- Login: `POST /user/login`
-- Refresh Token: `POST /user/refresh-token`
+### Planned Enhancements (v3.0)
 
-**User stuff (login required):**
+**Phase 2 (Q2 2026):**
 
-- Logout: `POST /user/logout`
-- Change Password: `POST /user/change-password`
-- Get Your Info: `GET /user/current-user-details`
-- Update Profile: `PATCH /user/update-account`
-- Change Avatar: `PATCH /user/update-avatar`
-- Watch History: `GET /user/watch-history`
+- Real-time notifications (WebSockets)
+- Full-text search (PostgreSQL `tsvector` + GIN indexes)
+- Redis caching layer (sessions, user profiles)
 
-**Videos (login required):**
+**Phase 3 (Q3 2026):**
 
-- Get All Videos: `GET /videos`
-- Upload Video: `POST /videos`
-- Get One Video: `GET /videos/:videoId`
-- Update Video: `PATCH /videos/:videoId`
-- Delete Video: `DELETE /videos/:videoId`
-- Publish/Unpublish: `PATCH /videos/toggle/publish/:videoId`
-
-**Social Features (login required):**
-
-- Add Comment: `POST /comments/:videoId`
-- Like Video: `POST /likes/toggle/v/:videoId`
-- Subscribe: `POST /subscriptions/c/:channelId`
-- Create Tweet: `POST /tweets`
-
-And many more! Check out the full API documentation for details.
+- Video transcoding pipeline (HLS adaptive streaming)
+- Live streaming (RTMP → HLS)
+- Content moderation tools
 
 ---
 
-## How it keeps your data safe
+## Technical Decisions & Trade-offs
 
-Security was a priority when building this:
+### Why PostgreSQL over MongoDB?
 
-**Passwords:**
+- **Relational Integrity:** Subscriptions, playlists require complex joins
+- **ACID Compliance:** Critical for like counts, view tracking
+- **Prisma ORM:** Type-safe queries, migration management
 
-- Never stored in plain text
-- Encrypted with bcrypt (industry standard)
-- Need your old password to change to a new one
+### Why PM2 Fork Mode?
 
-**Login System:**
+- **Memory Constraint:** 1GB RAM insufficient for cluster mode
+- **Crash Recovery:** Automatic restart on failure
+- **Scaling Strategy:** Horizontal (multiple EC2 instances) vs vertical
 
-- Uses JWT tokens (like a digital ID card)
-- Tokens expire automatically
-- Stored in secure HTTP-only cookies
+### Why Cloudflare Flexible SSL?
 
-**File Uploads:**
+- **Simplified Management:** No origin SSL certificate required
+- **Trade-off:** AWS→Cloudflare traffic unencrypted (mitigated by IP whitelist)
+- **Alternative:** Full SSL with Let's Encrypt (added complexity)
 
-- Checks file size and type
-- Validates everything before accepting
-- Stores in cloud (not on the server)
+### Why Direct Cloudinary Upload?
 
-**Database:**
-
-- All queries use Prisma (prevents SQL injection)
-- Input validation on every request
-- Proper permissions (you can only edit your own stuff)
+- **Storage Efficiency:** Avoids local disk usage
+- **Scalability:** No server bottleneck for large files
+- **Trade-off:** Network dependency (mitigated by CDN reliability)
 
 ---
 
-## Want to deploy it?
+## Monitoring & Observability
 
-You can host this on:
+### Monitoring
 
-- Render
-- Railway
-- Heroku
-- AWS
-- Any platform that supports Node.js
+- **AWS CloudWatch:** Automated CPU & Network I/O tracking.
+- **PM2 Dashboard:** Real-time process metrics (RAM/Restart count).
+- **Health Check:** `/healthcheck` endpoint for uptime verification.
 
-**For the database:** Use Neon, Supabase, or Railway (they have free tiers!)
+### Key Metrics Tracked
 
-**For media files:** Cloudinary has a generous free plan
+- PM2 process health (CPU, memory, restart count)
+- AWS CloudWatch infrastructure metrics (network I/O, disk usage)
+- Application logs (error tracking via PM2 logs)
+- Database connection pool status (Prisma metrics)
 
 ---
 
 ## Contributing
 
-Found a bug? Want to add a feature? Pull requests are welcome!
+Contributions welcome. Follow standard Git workflow:
 
-1. Fork this repo
-2. Create your feature branch
-3. Make your changes
-4. Push and create a pull request
+```bash
+git checkout -b feature/feature-name
+# Make changes
+git commit -m "Add: feature description"
+git push origin feature/feature-name
+# Open pull request
+```
 
----
+**Code Standards:**
 
-## Questions?
-
-- Check the [API Documentation](./API_DOCUMENTATION.md) for endpoint details
-- Look at the [PRD](./PRD.md) for feature specs
-- Open an issue on GitHub if you need help
-
----
-
-## License
-
-This project is open source under the ISC License.
-
----
-
-## About
-
-Built by **Nishant Sharma**
-
-GitHub: [@Nishant-444](https://github.com/Nishant-444)
-
-If this helped you learn something or you're using it in your project, consider giving it a star!
-
----
-
-**Made with TypeScript, Node.js, Express, PostgreSQL, and Prisma**
-
-- [ ] Swagger/OpenAPI documentation
-- [ ] GraphQL API option
-- [ ] Microservices architecture
-
----
-
-## Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- ESLint + Prettier configured
+- TypeScript strict mode
+- Prisma schema migrations required
+- Update API docs for new endpoints
 
 ---
 
 ## License
 
-This project is licensed under the **ISC License**.
+ISC License
 
 ---
 
-## ‍ Author
+## Author
 
-**Nishant Sharma**
-
-- GitHub: [@Nishant-444](https://github.com/Nishant-444)
-- Project: [VizTube](https://github.com/Nishant-444/Viztube)
-
----
-
-## Acknowledgments
-
-- Express.js team for the excellent framework
-- Prisma team for the amazing ORM
-- PostgreSQL community
-- Cloudinary for media management
-- TypeScript team for type safety
+**Nishant Sharma**  
+GitHub: [@Nishant-444](https://github.com/Nishant-444)  
+Repository: [VizTube](https://github.com/Nishant-444/Viztube)
 
 ---
 
-## Show Your Support
+## Other Documentation
 
-If this project helped you or you found it interesting, please consider giving it a on GitHub!
+- **[PRD](./PRD.md)** - Product requirements, system architecture, feature specifications
+- **[Postman Collection](./docs/viztube.postman_collection.json)** - API testing collection
 
 ---
-
-**Built with using TypeScript, Node.js, Express, PostgreSQL, and Prisma**

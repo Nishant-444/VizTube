@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "VIZTUBE API Collection",
-    "description": "Complete API collection for VIZTUBE - A YouTube-inspired video streaming platform",
-    "version": "1.0.0",
+    "description": "Complete API collection for VIZTUBE - A YouTube-inspired video streaming platform. Hosted on AWS EC2 with Nginx & Cloudflare.",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://viztube.onrender.com/api/v1",
+      "value": "https://viztube.me/api/v1",
       "type": "string"
     },
     {
