@@ -2,7 +2,8 @@
 
 **Version:** 2.0.0  
 **Author:** Nishant Sharma  
-**Status:** Production (v2)
+**Status:** Production (v2)  
+**Live API Endpoint:** [https://viztube.me](https://viztube.me)
 
 ---
 
@@ -79,5 +80,42 @@ The following features are planned for v3.0 to address current limitations:
 1.  **Rate Limiting:** Implementation of API throttling to prevent abuse on authentication routes.
 2.  **Video Transcoding:** Server-side processing to support adaptive bitrate streaming (HLS).
 3.  **Caching:** Integration of Redis to cache heavy database queries (e.g., User Profiles).
+
+---
+
+## 7. DevOps & Infrastructure
+
+### Deployment Strategy
+
+**Automated Push-to-Deploy:**
+
+- Continuous Integration/Continuous Deployment (CI/CD) via GitHub Actions
+- Deployment trigger: Push to `master` branch
+- Zero-downtime deployments using PM2 reload mechanism
+
+**Deployment Workflow:**
+
+```
+Developer Push → GitHub Actions → SSH to EC2 → Git Pull → npm install → npm run build → prisma migrate deploy → pm2 reload
+```
+
+### Environment Management
+
+**Secrets Storage:**
+
+- GitHub Actions Secrets for CI/CD credentials (SSH keys, deployment tokens)
+- AWS EC2 environment variables for runtime configuration (`.env` file)
+- No sensitive data committed to version control
+
+**Configuration Files:**
+
+- `.env` (runtime): Database URLs, JWT secrets, Cloudinary credentials
+- `.github/workflows/deploy.yml` (CI/CD): Deployment automation script
+
+**Security Practices:**
+
+- SSH key-based authentication (no password login)
+- Secrets rotation on compromise
+- Principle of least privilege (EC2 IAM roles, GitHub token scopes)
 
 ---

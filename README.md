@@ -1,7 +1,8 @@
 # VizTube - Production Video Platform Backend
 
 **Version:** 2.0.0  
-**Status:** Production (V2)  
+**Status:** Live Deployment (MVP)  
+**Live API Endpoint:** [https://viztube.me](https://viztube.me)  
 **Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, AWS
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
@@ -54,24 +55,25 @@ Client → Cloudflare (SSL/DNS) → AWS Security Group → Nginx → PM2 → Exp
 
 ## Core Technology Stack
 
-![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Express](https://img.shields.io/badge/Express-5.1-000000?style=for-the-badge&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-EC2/RDS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
-![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.1-000000?style=flat-square&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-EC2/RDS-232F3E?style=flat-square&logo=amazonaws&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 
-| Layer     | Technology | Version | Purpose                                   |
-| --------- | ---------- | ------- | ----------------------------------------- |
-| Runtime   | Node.js    | v18+    | Server execution environment              |
-| Language  | TypeScript | v5.9.3  | Type safety, compile-time error detection |
-| Framework | Express.js | v5.1.0  | HTTP request handling, middleware         |
-| Database  | PostgreSQL | v14+    | Relational data storage                   |
-| ORM       | Prisma     | v7.2.0  | Type-safe database queries                |
-| Auth      | JWT        | -       | Stateless authentication                  |
-| Storage   | Cloudinary | -       | Video/image CDN                           |
+| Layer     | Technology          | Version | Purpose                                   |
+| --------- | ------------------- | ------- | ----------------------------------------- |
+| Runtime   | Node.js             | v18+    | Server execution environment              |
+| Language  | TypeScript          | v5.9.3  | Type safety, compile-time error detection |
+| Framework | Express.js          | v5.1.0  | HTTP request handling, middleware         |
+| Database  | PostgreSQL          | v14+    | Relational data storage                   |
+| ORM       | Prisma              | v7.2.0  | Type-safe database queries                |
+| Auth      | JWT                 | -       | Stateless authentication                  |
+| Storage   | Cloudinary          | -       | Video/image CDN                           |
+| Security  | Helmet + Rate Limit | -       | HTTP headers, brute force prevention      |
 
 ---
 
@@ -315,17 +317,6 @@ Outbound: All traffic (RDS + Cloudinary connections)
 
 ---
 
-## Performance Characteristics
-
-### Performance Goals (SLAs)
-
-| Metric                         | Target |
-| ------------------------------ | ------ |
-| API Response (95th percentile) | <200ms |
-| Video Upload (100MB)           | <5s    |
-| Database Query Avg             | <50ms  |
-| CDN First Byte                 | <100ms |
-
 ### Optimization Strategies
 
 **Database:**
@@ -394,7 +385,7 @@ PostgreSQL v14+
 Cloudinary account
 ```
 
-### Installation
+### Local Development Setup
 
 ```bash
 # Clone repository
@@ -417,10 +408,27 @@ npm run build
 
 # Start development server
 npm run dev
-
-# Production start
-npm start
 ```
+
+### CI/CD Pipeline
+
+This project uses **GitHub Actions** for automated deployment. On every push to the `master` branch, the workflow:
+
+1. SSHs into the AWS EC2 instance
+2. Syncs the latest code from the repository
+3. Installs dependencies and builds the TypeScript source
+4. Runs database migrations (if any)
+5. Gracefully reloads the application using PM2 (`pm2 reload`)
+
+**Deployment Triggers:**
+
+- Push to `master` branch → Automatic deployment
+- Manual workflow dispatch → On-demand deployment
+
+**Secrets Management:**
+
+- SSH private keys, database URLs, and API credentials are stored in GitHub Actions Secrets
+- No sensitive data committed to the repository
 
 ### Environment Variables
 
@@ -531,14 +539,9 @@ viztube/
 
 ### Planned Enhancements (v3.0)
 
-**Phase 2 (Q2 2026):**
-
 - Real-time notifications (WebSockets)
 - Full-text search (PostgreSQL `tsvector` + GIN indexes)
 - Redis caching layer (sessions, user profiles)
-
-**Phase 3 (Q3 2026):**
-
 - Video transcoding pipeline (HLS adaptive streaming)
 - Live streaming (RTMP → HLS)
 - Content moderation tools
@@ -613,7 +616,7 @@ git push origin feature/feature-name
 
 ## License
 
-ISC License
+ISC [License](./LICENSE)
 
 ---
 
@@ -627,7 +630,7 @@ Repository: [VizTube](https://github.com/Nishant-444/Viztube)
 
 ## Other Documentation
 
-- **[PRD](./PRD.md)** - Product requirements, system architecture, feature specifications
+- **[PRD](./docs/PRD.md)** - Product requirements, system architecture, feature specifications
 - **[Postman Collection](./docs/viztube.postman_collection.json)** - API testing collection
 
 ---
