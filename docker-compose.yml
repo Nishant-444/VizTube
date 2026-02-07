@@ -3,6 +3,7 @@ version: '3.8'
 services:
   api:
     build: .
+    image: nishant100606/viztube:latest
     restart: always
     ports:
       - '${PORT}:${PORT}' # uses PORT from .env

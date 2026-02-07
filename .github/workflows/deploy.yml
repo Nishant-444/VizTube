@@ -1,4 +1,4 @@
-name: Deploy to AWS
+name: Deploy Docker to EC2
 
 on:
   push:
@@ -6,34 +6,49 @@ on:
       - master
 
 jobs:
-  deploy:
+  # build job
+  build-and-push:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push to Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: nishant100606/viztube:latest
+
+  # deploy job
+  deploy-to-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Load NVM (Node Version Manager)
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            # 1. Go to the folder
+            cd viztube
 
-            # 2. Navigate to project folder
-            cd ~/VizTube
+            # 2. Stop the old container (if running)
+            docker compose down
 
-            # 3. Pull latest code from master
-            git pull origin master
+            # 3. Pull the shiny new image we just built
+            docker compose pull
 
-            # 4. Install dependencies and rebuild
-            npm install
-            npx prisma generate
-            npx tsc --noEmitOnError false
-            
-            # 5. Restart the server
-            pm2 restart viztube
+            # 4. Start it up in the background
+            docker compose up -d
+
+            # 5. Clean up old junk to save space
+            docker image prune -f
