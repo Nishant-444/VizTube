@@ -2,13 +2,12 @@ version: '3.8'
 
 services:
   api:
-    build: .
     image: nishant100606/viztube:latest
     restart: always
     ports:
-      - '${PORT}:${PORT}' # uses PORT from .env
+      - '${PORT}:${PORT}'
     environment:
-      DATABASE_URL: ${DATABASE_URL} # reads from .env
+      DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
     depends_on:

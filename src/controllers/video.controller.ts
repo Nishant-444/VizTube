@@ -18,26 +18,21 @@ const removeLocalFile = (localPath: string) => {
 
 // exported functions
 const publishAVideo = asyncHandler(async (req, res) => {
-  if (!req.user?.id) {
-    throw new ApiError(401, 'Unauthorized');
-  }
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
   const { title, description } = req.body;
-
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
   const videoLocalPath = files?.videoFile?.[0]?.path;
   const thumbnailLocalPath = files?.thumbnail?.[0]?.path;
 
-  if (!title || title.trim() === '') {
+  if (!title || !videoLocalPath || !thumbnailLocalPath) {
     if (videoLocalPath) removeLocalFile(videoLocalPath);
     if (thumbnailLocalPath) removeLocalFile(thumbnailLocalPath);
-    throw new ApiError(400, 'Title is required');
-  }
-  if (!videoLocalPath) {
-    throw new ApiError(400, 'Video file is required');
-  }
-  if (!thumbnailLocalPath) {
-    throw new ApiError(400, 'Thumbnail file is required');
+    throw new ApiError(
+      400,
+      'Title, Video file, and Thumbnail are all required'
+    );
   }
 
   let videoUpload: CloudinaryResponse | null = null;
@@ -55,14 +50,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
       data: {
         title,
         description: description || '',
-
         videoFileUrl: videoUpload.url,
         videoFilePublicId: videoUpload.public_id,
         thumbnailUrl: thumbnailUpload.url,
         thumbnailPublicId: thumbnailUpload.public_id,
-
         duration: videoUpload.duration || 0,
-
         isPublished: true,
         userId: req.user.id,
       },
@@ -81,10 +73,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
       await deleteFromCloudinary(thumbnailUpload.public_id);
     }
 
-    throw new ApiError(
-      500,
-      'Something went wrong while publishing the video. Files were deleted.'
-    );
+    throw new ApiError(500, 'Video publication failed');
   }
 });
 
@@ -245,7 +234,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
       console.error('Failed to delete files from Cloudinary:', error);
     }
   };
-  cleanupFiles();
+  await cleanupFiles();
 
   return res
     .status(200)
