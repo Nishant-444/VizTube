@@ -1,55 +1,60 @@
 # VizTube - Production Video Platform Backend
 
+[![Deploy Docker to EC2](https://github.com/Nishant-444/VizTube/actions/workflows/deploy.yml/badge.svg)](https://github.com/Nishant-444/VizTube/actions/workflows/deploy.yml)
+
 **Version:** 2.0.0  
 **Status:** Live Deployment (MVP)  
 **Live API Endpoint:** [https://viztube.me](https://viztube.me)  
-**Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, AWS
+**Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, Docker, AWS
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
 
 ---
 
 ## Project Overview
 
-VizTube is a production-grade backend infrastructure for a video-sharing platform, built with enterprise-level architecture and deployed on AWS. The system is architected for high concurrency with sub-200ms API response time targets, featuring secure JWT authentication, Cloudinary CDN integration, and a fully normalized PostgreSQL database.
+VizTube is a resource-optimized production MVP backend for a video-sharing platform, deployed on AWS with a containerized architecture. The system features secure JWT authentication, Cloudinary CDN integration, and a fully normalized PostgreSQL database managed through Prisma ORM.
 
 **Live Infrastructure:**
 
-- **Compute:** AWS EC2 (t3.micro)
-- **Database:** AWS RDS PostgreSQL
+- **Compute:** AWS EC2 (t3.micro - 1GB RAM, 2 vCPU)
+- **Database:** Self-hosted PostgreSQL in Docker container
 - **CDN:** Cloudinary (100MB video limit)
-- **Security:** Cloudflare DNS/SSL + AWS Security Groups
-- **Process Manager:** PM2 (fork mode)
+- **Containerization:** Docker Compose (Node.js API + PostgreSQL)
+- **Security:** Cloudflare DNS/SSL + Certbot/Nginx SSL
+- **Process Manager:** Docker containers
 
 ---
 
 ## System Architecture
 
 ```
-Client → Cloudflare (SSL/DNS) → AWS Security Group → Nginx → PM2 → Express → PostgreSQL/Cloudinary
+Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API + PostgreSQL) → Cloudinary
 ```
 
 **Request Flow:**
 
 1. HTTPS request hits Cloudflare edge network
 2. DNS resolves, SSL terminated at Cloudflare
-3. Traffic proxied to AWS EC2 (Cloudflare IPs whitelisted)
-4. Nginx reverse proxy forwards to localhost:3000
-5. PM2-managed Node.js process handles request
-6. Express routes to controller → Prisma ORM → PostgreSQL
-7. Media uploads stream directly to Cloudinary
+3. Traffic proxied to AWS EC2 via Nginx reverse proxy
+4. Nginx reverse proxy with SSL/TLS (Certbot) forwards to Docker container (port 3000 blocked by AWS Security Groups)
+5. Dockerized Node.js API handles request
+6. Express routes to controller → Prisma ORM → PostgreSQL (Docker container)
+7. Media uploads processed via Multer (disk storage to `public/temp`), then asynchronously uploaded to Cloudinary
 
 **Key Infrastructure Decisions:**
 
-- **Fork Mode vs Cluster:** Single PM2 instance prevents OOM crashes on 1GB RAM
-- **Cloudflare Flexible SSL:** Simplifies origin server SSL management
-- **Direct Cloudinary Upload:** Reduces server storage overhead
-- **AWS RDS:** Managed backups, automated failover
+- **Docker Containers:** Isolated services with resource limits and easy rollback
+- **Self-hosted PostgreSQL:** Docker volume persistence for data durability
+- **Certbot SSL/TLS:** Free SSL certificates with auto-renewal
+- **Asynchronous Media Processing:** Server-side Cloudinary integration via Multer disk storage
+- **Automated Docker Deployment:** GitHub Actions CI/CD with container rebuilds
 
 ---
 
@@ -60,7 +65,8 @@ Client → Cloudflare (SSL/DNS) → AWS Security Group → Nginx → PM2 → Exp
 ![Express](https://img.shields.io/badge/Express-5.1-000000?style=flat-square&logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?style=flat-square&logo=prisma&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-EC2/RDS-232F3E?style=flat-square&logo=amazonaws&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-EC2-232F3E?style=flat-square&logo=amazonaws&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 
@@ -71,6 +77,7 @@ Client → Cloudflare (SSL/DNS) → AWS Security Group → Nginx → PM2 → Exp
 | Framework | Express.js          | v5.1.0  | HTTP request handling, middleware         |
 | Database  | PostgreSQL          | v14+    | Relational data storage                   |
 | ORM       | Prisma              | v7.2.0  | Type-safe database queries                |
+| Container | Docker + Compose    | -       | Containerization and orchestration        |
 | Auth      | JWT                 | -       | Stateless authentication                  |
 | Storage   | Cloudinary          | -       | Video/image CDN                           |
 | Security  | Helmet + Rate Limit | -       | HTTP headers, brute force prevention      |
@@ -287,11 +294,14 @@ Request → Helmet (security headers)
 
 ### Network Security
 
-**AWS Security Group Rules:**
+**Attack Surface Reduction:**
 
 ```
-Inbound: Port 80 TCP from Cloudflare IP ranges ONLY
-Outbound: All traffic (RDS + Cloudinary connections)
+AWS Security Group Rules:
+- Port 3000 (API) blocked from public internet
+- Ports 80/443 open for HTTPS traffic
+- Port 22 SSH restricted (admin access only)
+- All traffic routed through Nginx reverse proxy
 ```
 
 **Cloudflare Configuration:**
@@ -324,7 +334,7 @@ Outbound: All traffic (RDS + Cloudinary connections)
 - Strategic indexes on `userId`, `videoId`, `createdAt`
 - Unique constraints on likes (prevent duplicate queries)
 - Pagination (default 10 items/page)
-- Prisma connection pooling (optimized for single instance)
+- Prisma connection pooling (containerized PostgreSQL)
 
 **Media Delivery:**
 
@@ -334,8 +344,8 @@ Outbound: All traffic (RDS + Cloudinary connections)
 
 **Application:**
 
-- PM2 automatic restarts (zero-downtime on crashes)
-- Nginx request buffering (reduces backend load)
+- Docker container orchestration (automatic restarts on crashes)
+- Nginx reverse proxy with request buffering
 - Gzip compression (text responses)
 
 ---
@@ -349,29 +359,40 @@ Outbound: All traffic (RDS + Cloudinary connections)
 ```yaml
 Instance: AWS EC2 t3.micro
 OS: Ubuntu 24.04 LTS
-RAM: 1GB (constraint: fork mode only)
+RAM: 1GB
 CPU: 2 vCPU
-Process Manager: PM2 (1 instance, fork mode)
-Web Server: Nginx (reverse proxy, port 80 → 3000)
+Containerization: Docker + Docker Compose
+Web Server: Nginx (reverse proxy, ports 80/443 → Docker)
 ```
 
-**PM2 Ecosystem:**
+**Docker Compose Stack:**
 
-```javascript
-{
-  name: "viztube-api",
-  script: "./dist/index.js",
-  instances: 1,
-  exec_mode: "fork",
-  env: { NODE_ENV: "production", PORT: 3000 }
-}
+```yaml
+Services:
+  - viztube-api: Node.js API container (port 3000)
+  - postgres: PostgreSQL 14+ container (port 5432)
+  - volumes: Persistent data storage for PostgreSQL
 ```
 
 **Database Configuration:**
 
-- AWS RDS PostgreSQL (managed service)
-- Automated daily backups (7-day retention)
+- Self-hosted PostgreSQL in Docker container
+- Persistent Docker volumes for data storage
 - SSL/TLS connection enforced
+
+---
+
+## 🚀 Deployment & DevOps
+
+**Production:** Hosted on AWS EC2 (t3.micro - 1GB RAM) with Nginx reverse proxy.
+
+**CI/CD:** Automated pipeline via GitHub Actions. Pushes to main trigger a Docker build and automated deployment (brief downtime during container restart).
+
+**Containerization:** Fully Dockerized application (Node.js API + PostgreSQL) running in isolated containers.
+
+**Database:** Self-hosted PostgreSQL with persistent Docker volumes.
+
+**Security:** SSL/TLS encryption via Certbot & Nginx. Attack surface reduced by blocking direct API port access.
 
 ---
 
@@ -412,18 +433,21 @@ npm run dev
 
 ### CI/CD Pipeline
 
-This project uses **GitHub Actions** for automated deployment. On every push to the `master` branch, the workflow:
+This project uses **GitHub Actions** for automated deployment. On every push to the `main` branch, the workflow:
 
-1. SSHs into the AWS EC2 instance
-2. Syncs the latest code from the repository
-3. Installs dependencies and builds the TypeScript source
-4. Runs database migrations (if any)
-5. Gracefully reloads the application using PM2 (`pm2 reload`)
+1. Builds Docker image in GitHub Actions runner
+2. Pushes image to Docker Hub registry
+3. SSHs into the AWS EC2 instance
+4. Pulls the pre-built Docker image from Docker Hub
+5. Stops running containers (`docker compose down`)
+6. Starts updated containers with new image (`docker compose up -d`)
+7. Runs database migrations (if any)
 
-**Deployment Triggers:**
+**Deployment Characteristics:**
 
-- Push to `master` branch → Automatic deployment
-- Manual workflow dispatch → On-demand deployment
+- Brief downtime (few seconds) during container restart
+- Automated on push to `main` branch
+- Manual workflow dispatch available for on-demand deployment
 
 **Secrets Management:**
 
@@ -521,8 +545,9 @@ viztube/
 │   ├── utils/                  # ApiResponse, ApiError, Cloudinary helpers
 │   └── validators/             # Input validation schemas
 ├── public/temp/                # Temporary upload storage
-├── .env.sample                 # Environment template
-└── ecosystem.config.js         # PM2 configuration
+├── docker-compose.yml          # Docker orchestration
+├── Dockerfile                  # Container image definition
+└── .env.sample                 # Environment template
 ```
 
 ---
@@ -556,23 +581,25 @@ viztube/
 - **ACID Compliance:** Critical for like counts, view tracking
 - **Prisma ORM:** Type-safe queries, migration management
 
-### Why PM2 Fork Mode?
+### Why Docker Containers?
 
-- **Memory Constraint:** 1GB RAM insufficient for cluster mode
-- **Crash Recovery:** Automatic restart on failure
-- **Scaling Strategy:** Horizontal (multiple EC2 instances) vs vertical
+- **Isolation:** Services run in isolated environments with resource limits
+- **Portability:** Same container runs locally and in production
+- **Easy Rollback:** Previous image versions available for instant rollback
+- **Simplified Deployment:** Docker Compose orchestrates multi-container setup
 
-### Why Cloudflare Flexible SSL?
+### Why Certbot/Let's Encrypt SSL?
 
-- **Simplified Management:** No origin SSL certificate required
-- **Trade-off:** AWS→Cloudflare traffic unencrypted (mitigated by IP whitelist)
-- **Alternative:** Full SSL with Let's Encrypt (added complexity)
+- **Free SSL/TLS:** Automated certificate issuance and renewal
+- **End-to-End Encryption:** Full HTTPS from client to container
+- **Industry Standard:** Trusted by all major browsers
 
-### Why Direct Cloudinary Upload?
+### Why Server-Side Cloudinary Integration?
 
-- **Storage Efficiency:** Avoids local disk usage
-- **Scalability:** No server bottleneck for large files
-- **Trade-off:** Network dependency (mitigated by CDN reliability)
+- **Simplified Client:** Browser doesn't need Cloudinary credentials
+- **Validation Control:** Server validates files before CDN upload
+- **Temporary Storage:** Multer disk storage (`public/temp`) handles multipart uploads
+- **Trade-off:** Brief disk usage during upload process (files deleted post-processing)
 
 ---
 
@@ -580,15 +607,15 @@ viztube/
 
 ### Monitoring
 
+- **Docker Stats:** Real-time container resource metrics (CPU, memory, network).
 - **AWS CloudWatch:** Automated CPU & Network I/O tracking.
-- **PM2 Dashboard:** Real-time process metrics (RAM/Restart count).
 - **Health Check:** `/healthcheck` endpoint for uptime verification.
 
 ### Key Metrics Tracked
 
-- PM2 process health (CPU, memory, restart count)
+- Docker container health (CPU, memory, restart count)
 - AWS CloudWatch infrastructure metrics (network I/O, disk usage)
-- Application logs (error tracking via PM2 logs)
+- Application logs (Docker logs for API and PostgreSQL)
 - Database connection pool status (Prisma metrics)
 
 ---

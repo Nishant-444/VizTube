@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-VizTube is a backend video-sharing infrastructure designed for scalability and data integrity. It provides a complete API for video hosting, user authentication, and social interactions. The system is currently deployed on AWS and serves live traffic.
+VizTube is a backend video-sharing infrastructure designed for scalability and data integrity. It provides a complete API for video hosting, user authentication, and social interactions. The system is currently deployed on AWS EC2 with a fully containerized Docker architecture and serves live traffic.
 
 ## 2. System Architecture
 
@@ -18,15 +18,17 @@ The application uses a layered architecture to separate routing, business logic,
 ### Infrastructure Stack
 
 - **Compute:** AWS EC2 (`t3.micro` instance running Ubuntu Linux).
-- **Process Management:** PM2 running in `fork` mode (single instance) to optimize for 1GB RAM constraints.
-- **Reverse Proxy:** Nginx handling port forwarding and local SSL termination.
-- **DNS & Security:** Cloudflare acting as the edge network for DNS, SSL, and DDoS protection.
+- **Containerization:** Docker + Docker Compose orchestrating multi-container deployment.
+- **Process Management:** Docker containers with automatic restart policies.
+- **Reverse Proxy:** Nginx handling port forwarding (80/443) and SSL/TLS termination via Certbot.
+- **DNS & Security:** Cloudflare acting as the edge network for DNS and DDoS protection.
 
 ### Database & Storage
 
-- **Database:** PostgreSQL managed via AWS RDS.
+- **Database:** Self-hosted PostgreSQL (v14+) running in Docker container with persistent volumes.
 - **ORM:** Prisma (v7.2.0) for type-safe database queries.
-- **Media:** Cloudinary for direct-to-cloud video and image storage.
+- **Media:** Cloudinary for video and image storage via server-side upload.
+- **Container Registry:** Docker Hub for pre-built application images.
 
 ## 3. Core Features
 
@@ -57,12 +59,13 @@ The application uses a layered architecture to separate routing, business logic,
 
 ## 4. Technical Constraints & limits
 
-- **Instance Size:** Limited to 1 vCPU / 1GB RAM (AWS t3.micro).
-- **Concurrency:** Single Node.js process (no clustering) to prevent memory exhaustion.
+- **Instance Size:** Limited to 2 vCPU / 1GB RAM (AWS t3.micro).
+- **Containerization:** Docker resource limits applied per container to prevent resource exhaustion.
 - **File Limits:**
   - Video: 100 MB max.
   - Image: 10 MB max.
-- **Network:** Inbound traffic restricted to Cloudflare IPs only.
+- **Network:** Inbound traffic restricted to Cloudflare IPs only (ports 80/443).
+- **Storage:** Docker volumes for persistent PostgreSQL data.
 
 ## 5. Database Schema Overview
 
@@ -79,7 +82,7 @@ The following features are planned for v3.0 to address current limitations:
 
 1.  **Rate Limiting:** Implementation of API throttling to prevent abuse on authentication routes.
 2.  **Video Transcoding:** Server-side processing to support adaptive bitrate streaming (HLS).
-3.  **Caching:** Integration of Redis to cache heavy database queries (e.g., User Profiles).
+3.  **Caching:** Integration of Redis (as additional Docker container) to cache heavy database queries (e.g., User Profiles).
 
 ---
 
@@ -90,14 +93,21 @@ The following features are planned for v3.0 to address current limitations:
 **Automated Push-to-Deploy:**
 
 - Continuous Integration/Continuous Deployment (CI/CD) via GitHub Actions
-- Deployment trigger: Push to `master` branch
-- Zero-downtime deployments using PM2 reload mechanism
+- Deployment trigger: Push to `main` branch
+- Automated Docker deployment with brief downtime during container restart
 
 **Deployment Workflow:**
 
 ```
-Developer Push → GitHub Actions → SSH to EC2 → Git Pull → npm install → npm run build → prisma migrate deploy → pm2 reload
+Developer Push → GitHub Actions (Build & Push to Docker Hub) → SSH to EC2 → Pull Pre-built Image → Docker Compose Down → Docker Compose Up → Prisma Migrate
 ```
+
+**Docker Architecture:**
+
+- **viztube-api container:** Node.js/TypeScript API (port 3000)
+- **postgres container:** PostgreSQL database (port 5432)
+- **Persistent volumes:** Database data retention across container restarts
+- **Health checks:** Automated container health monitoring and restart
 
 ### Environment Management
 
