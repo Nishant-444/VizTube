@@ -40,6 +40,8 @@ jobs:
           script: |
             # 1. Go to the folder
             cd VizTube
+            git fetch --all
+            git reset --hard origin/master
 
             # 2. Stop the old container (if running)
             docker compose down

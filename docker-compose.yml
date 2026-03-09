@@ -6,6 +6,8 @@ services:
     restart: always
     ports:
       - '${PORT}:${PORT}'
+    env_file:
+      - .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: ${NODE_ENV}
@@ -13,17 +15,18 @@ services:
     depends_on:
       - db
 
-  db:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
+  # using rds so do not need it now
+  # db:
+  #   image: postgres:15-alpine
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: ${DB_USER}
+  #     POSTGRES_PASSWORD: ${DB_PASS}
+  #     POSTGRES_DB: ${DB_NAME}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - '5432:5432'
 
 volumes:
   postgres_data:
