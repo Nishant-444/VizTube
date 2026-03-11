@@ -68,6 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // File Uploads
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   const avatarLocalPath = files?.avatar?.[0]?.path;
+  console.log('MULTER PATH IS:', avatarLocalPath);
   const coverLocalPath = files?.coverImage?.[0]?.path;
 
   if (!avatarLocalPath) throw new ApiError(400, 'Avatar file is required');
@@ -76,11 +77,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   try {
     avatarUpload = await uploadOnCloudinary(avatarLocalPath);
-    fs.unlinkSync(avatarLocalPath);
     if (coverLocalPath) {
       coverImageUpload = await uploadOnCloudinary(coverLocalPath);
     }
-    fs.unlinkSync(coverLocalPath);
   } catch (error) {
     throw new ApiError(500, 'Failed to upload images');
   }
@@ -251,6 +250,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   // console.log(files);
 
   const avatarLocalPath = files?.avatar?.[0]?.path;
+  console.log('MULTER PATH IS:', avatarLocalPath);
   // console.log(avatarLocalPath);
 
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
@@ -265,7 +265,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   const avatarUpload = await uploadOnCloudinary(avatarLocalPath);
   if (!avatarUpload) throw new ApiError(500, 'Error uploading avatar');
-  fs.unlinkSync(avatarLocalPath);
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: { avatar: avatarUpload.url },
@@ -284,7 +283,6 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverUpload = await uploadOnCloudinary(coverLocalPath);
   if (!coverUpload) throw new ApiError(500, 'Error uploading cover');
-  fs.unlinkSync(coverLocalPath);
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: { coverImage: coverUpload.url },
