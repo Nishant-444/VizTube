@@ -1,14 +1,15 @@
-name: Deploy Docker to EC2
+name: Deploy VizTube API to EC2
 
 on:
   push:
     branches:
-      - master
+      - master # Triggers when you push to master
 
 jobs:
-  # build job
   build-and-push:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,38 +20,28 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push to Docker Hub
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: nishant100606/viztube:latest
 
-  # deploy job
-  deploy-to-ec2:
-    needs: build-and-push
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push # waits for the build to finish
     runs-on: ubuntu-latest
+
     steps:
-      - name: SSH and Deploy
+      - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_KEY }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Go to the folder
-            cd VizTube
-            git fetch --all
-            git reset --hard origin/master
-
-            # 2. Stop the old container (if running)
-            docker compose down
-
-            # 3. Pull the shiny new image we just built
-            docker compose pull
-
-            # 4. Start it up in the background
-            docker compose up -d
-
-            # 5. Clean up old junk to save space
+            cd ~/viztube
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
             docker image prune -f
