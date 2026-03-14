@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js';
 
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
   if (!content || content.trim() === '') {
@@ -25,7 +26,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  const userIdInt = parseInt(userId);
+  const userIdInt = parseInt(userId as string);
   if (isNaN(userIdInt)) throw new ApiError(400, 'Invalid user ID');
 
   const tweets = await prisma.tweet.findMany({
@@ -50,9 +51,10 @@ const getUserTweets = asyncHandler(async (req, res) => {
 const updateTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
   const { content } = req.body;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
-  const tweetIdInt = parseInt(tweetId);
+  const tweetIdInt = parseInt(tweetId as string);
   if (isNaN(tweetIdInt)) throw new ApiError(400, 'Invalid tweet ID');
 
   if (!content || content.trim() === '') {
@@ -80,9 +82,10 @@ const updateTweet = asyncHandler(async (req, res) => {
 
 const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
-  const tweetIdInt = parseInt(tweetId);
+  const tweetIdInt = parseInt(tweetId as string);
   if (isNaN(tweetIdInt)) throw new ApiError(400, 'Invalid tweet ID');
 
   try {

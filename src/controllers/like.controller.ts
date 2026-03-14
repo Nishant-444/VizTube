@@ -4,10 +4,12 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../lib/prisma.js';
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
-  const videoIdInt = parseInt(videoId);
+  const { videoId } = req.params;
+
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   const existingLike = await prisma.like.findFirst({
@@ -45,9 +47,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
-  const commentIdInt = parseInt(commentId);
+  const commentIdInt = parseInt(commentId as string);
   if (isNaN(commentIdInt)) throw new ApiError(400, 'Invalid comment ID');
 
   const existingLike = await prisma.like.findFirst({
@@ -85,9 +88,10 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
-  const tweetIdInt = parseInt(tweetId);
+  const tweetIdInt = parseInt(tweetId as string);
   if (isNaN(tweetIdInt)) throw new ApiError(400, 'Invalid tweet ID');
 
   const existingLike = await prisma.like.findFirst({
@@ -124,6 +128,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const userId = req.user.id;
 
   const likedVideos = await prisma.like.findMany({

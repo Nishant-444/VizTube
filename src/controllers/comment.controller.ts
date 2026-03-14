@@ -6,9 +6,9 @@ import { prisma } from '../lib/prisma.js';
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { content } = req.body;
-  const userId = req.user.id;
+  const userId = req.user!.id;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   if (!content || content.trim() === '') {
@@ -24,8 +24,8 @@ const addComment = asyncHandler(async (req, res) => {
   const comment = await prisma.comment.create({
     data: {
       content: content,
-      videoId: videoIdInt,
       userId: userId,
+      videoId: videoIdInt,
     },
   });
 
@@ -37,7 +37,7 @@ const addComment = asyncHandler(async (req, res) => {
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   const page = Number(req.query.page) || 1;
@@ -71,9 +71,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user!.id;
 
-  const commentIdInt = parseInt(commentId);
+  const commentIdInt = parseInt(commentId as string);
   if (isNaN(commentIdInt)) throw new ApiError(400, 'Invalid comment ID');
 
   try {
@@ -98,9 +98,9 @@ const deleteComment = asyncHandler(async (req, res) => {
 const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const { content } = req.body;
-  const userId = req.user.id;
+  const userId = req.user?.id;
 
-  const commentIdInt = parseInt(commentId);
+  const commentIdInt = parseInt(commentId as string);
   if (isNaN(commentIdInt)) throw new ApiError(400, 'Invalid comment ID');
 
   if (!content || content.trim() === '') {

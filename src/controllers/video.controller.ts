@@ -80,7 +80,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) {
     throw new ApiError(400, 'Invalid video ID');
   }
@@ -145,7 +145,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { title, description } = req.body;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
@@ -204,7 +204,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
@@ -244,7 +244,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const videoIdInt = parseInt(videoId);
+  const videoIdInt = parseInt(videoId as string);
   if (isNaN(videoIdInt)) throw new ApiError(400, 'Invalid video ID');
 
   const video = await prisma.video.findUnique({

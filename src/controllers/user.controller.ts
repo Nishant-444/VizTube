@@ -151,7 +151,9 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   await prisma.user.update({
     where: { id: req.user.id },
-    data: { refreshToken: null },
+    data: {
+      refreshToken: null,
+    },
   });
 
   return res
@@ -294,7 +296,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const { username } = req.params;
+  const { username } = req.params as { username: string };
   const currentUserId = req.user?.id;
 
   const channel = await prisma.user.findUnique({

@@ -4,6 +4,9 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../lib/prisma.js';
 
 const createPlaylist = asyncHandler(async (req, res) => {
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+  const userId = req.user.id;
+
   const { name, description } = req.body;
 
   if (!name || name.trim() === '') {
@@ -14,7 +17,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     data: {
       name,
       description: description || '',
-      userId: req.user.id, // Direct relation to User
+      userId: userId, // Direct relation to User
     },
   });
 
@@ -26,7 +29,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 const getUserPlaylists = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  const userIdInt = parseInt(userId);
+  const userIdInt = parseInt(userId as string);
   if (isNaN(userIdInt)) throw new ApiError(400, 'Invalid user ID');
 
   const playlists = await prisma.playlist.findMany({
@@ -76,7 +79,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 const getPlaylistById = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
 
-  const playlistIdInt = parseInt(playlistId);
+  const playlistIdInt = parseInt(playlistId as string);
   if (isNaN(playlistIdInt)) throw new ApiError(400, 'Invalid playlist ID');
 
   const playlist = await prisma.playlist.findUnique({
@@ -130,8 +133,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
 
-  const playlistIdInt = parseInt(playlistId);
-  const videoIdInt = parseInt(videoId);
+  const playlistIdInt = parseInt(playlistId as string);
+  const videoIdInt = parseInt(videoId as string);
 
   if (isNaN(playlistIdInt) || isNaN(videoIdInt)) {
     throw new ApiError(400, 'Invalid IDs');
@@ -168,8 +171,8 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
 
-  const playlistIdInt = parseInt(playlistId);
-  const videoIdInt = parseInt(videoId);
+  const playlistIdInt = parseInt(playlistId as string);
+  const videoIdInt = parseInt(videoId as string);
 
   if (isNaN(playlistIdInt) || isNaN(videoIdInt))
     throw new ApiError(400, 'Invalid IDs');
@@ -199,7 +202,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
 const deletePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
-  const playlistIdInt = parseInt(playlistId);
+  const playlistIdInt = parseInt(playlistId as string);
 
   if (isNaN(playlistIdInt)) throw new ApiError(400, 'Invalid playlist ID');
 
@@ -226,7 +229,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { name, description } = req.body;
 
-  const playlistIdInt = parseInt(playlistId);
+  const playlistIdInt = parseInt(playlistId as string);
   if (isNaN(playlistIdInt)) throw new ApiError(400, 'Invalid playlist ID');
 
   if (!name || name.trim() === '') {

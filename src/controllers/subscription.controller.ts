@@ -5,9 +5,10 @@ import { prisma } from '../lib/prisma.js';
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const subscriberId = req.user.id;
 
-  const channelIdInt = parseInt(channelId);
+  const channelIdInt = parseInt(channelId as string);
   if (isNaN(channelIdInt)) throw new ApiError(400, 'Invalid channel ID');
 
   if (channelIdInt === subscriberId) {
@@ -58,7 +59,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
-  const channelIdInt = parseInt(channelId);
+  const channelIdInt = parseInt(channelId   as string);
 
   if (isNaN(channelIdInt)) throw new ApiError(400, 'Invalid channel ID');
 
@@ -92,7 +93,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 const getSubscribedChannels = asyncHandler(async (req, res) => {
   const { subscriberId } = req.params;
-  const subscriberIdInt = parseInt(subscriberId);
+  const subscriberIdInt = parseInt(subscriberId as string);
 
   if (isNaN(subscriberIdInt)) throw new ApiError(400, 'Invalid subscriber ID');
 
