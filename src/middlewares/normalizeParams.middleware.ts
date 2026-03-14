@@ -11,7 +11,9 @@ export const normalizeUsername = (
     // check for username in params
     if (req.params.username) {
       // sanitize it
-      req.params.username = req.params.username.trim().toLowerCase();
+      req.params.username = (req.params.username as string)
+        .trim()
+        .toLowerCase();
     }
     next();
   } catch (error) {
