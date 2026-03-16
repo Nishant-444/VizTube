@@ -6,7 +6,6 @@ import {
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
 import { cookieOptions } from '../config/cookieOptions.js';
-import fs from 'fs';
 
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
