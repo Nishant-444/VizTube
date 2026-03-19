@@ -8,11 +8,38 @@ import {
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
 import { prisma } from '../lib/prisma.js';
 import fs from 'fs';
+import path from 'path';
+
+const projectTempDir = path.resolve(process.cwd(), 'public', 'temp');
+const containerTempDir = path.resolve('/app', 'public', 'temp');
+
+const isTempPath = (targetPath: string) => {
+  const resolved = path.resolve(targetPath);
+  return (
+    resolved.startsWith(`${projectTempDir}${path.sep}`) ||
+    resolved.startsWith(`${containerTempDir}${path.sep}`)
+  );
+};
 
 // helper function
 const removeLocalFile = (localPath: string) => {
-  if (localPath && fs.existsSync(localPath)) {
-    fs.unlinkSync(localPath);
+  if (!localPath || !isTempPath(localPath)) {
+    return;
+  }
+
+  try {
+    if (fs.existsSync(localPath)) {
+      fs.unlinkSync(localPath);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EACCES') {
+      console.error(
+        `EACCES: Permission denied deleting file ${localPath}`,
+        error
+      );
+      return;
+    }
+    throw error;
   }
 };
 

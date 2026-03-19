@@ -35,10 +35,12 @@ export const validateRegistrationFiles = (
   };
 
   if (avatar && avatar[0]?.path) {
+    // TODO: Move to persistent storage
     validateFile(avatar[0], 'Avatar');
   }
 
   if (coverImage && coverImage[0]?.path) {
+    // TODO: Move to persistent storage
     validateFile(coverImage[0], 'Cover Image');
   }
 
@@ -59,6 +61,7 @@ export const validateAvatarFile = (
   }
 
   // check integrity
+  // TODO: Move to persistent storage
   validateFile(avatarFile, 'Avatar');
 
   next();
@@ -77,6 +80,7 @@ export const validateCoverImageFile = (
     throw new ApiError(400, 'Cover Image file is required for update');
   }
   // check integrity
+  // TODO: Move to persistent storage
   validateFile(coverImageFile, 'Cover Image');
 
   next();

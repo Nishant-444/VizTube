@@ -1,7 +1,19 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
+import path from 'path';
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
 import 'dotenv/config';
+
+const projectTempDir = path.resolve(process.cwd(), 'public', 'temp');
+const containerTempDir = path.resolve('/app', 'public', 'temp');
+
+const isTempPath = (targetPath: string) => {
+  const resolved = path.resolve(targetPath);
+  return (
+    resolved.startsWith(`${projectTempDir}${path.sep}`) ||
+    resolved.startsWith(`${containerTempDir}${path.sep}`)
+  );
+};
 
 // configure cloudinary
 cloudinary.config({
@@ -18,6 +30,12 @@ const uploadOnCloudinary = async (
       console.log('No file path provided');
       return null;
     }
+
+    if (!isTempPath(localFilePath)) {
+      console.error('Rejected non-temp upload path:', localFilePath);
+      return null;
+    }
+
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: 'auto',
     });
@@ -28,12 +46,36 @@ const uploadOnCloudinary = async (
     );
 
     // once the file is uploaded, we would like to delete it from our server
-    fs.unlinkSync(localFilePath);
+    try {
+      fs.unlinkSync(localFilePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EACCES') {
+        console.error(
+          `EACCES: Permission denied deleting file ${localFilePath}`,
+          error
+        );
+      } else {
+        throw error;
+      }
+    }
     return response;
   } catch (error) {
     console.log('Error on cloudinary', error);
-    if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
+    if (
+      localFilePath &&
+      isTempPath(localFilePath) &&
+      fs.existsSync(localFilePath)
+    ) {
+      try {
+        fs.unlinkSync(localFilePath);
+      } catch (unlinkError) {
+        if ((unlinkError as NodeJS.ErrnoException).code === 'EACCES') {
+          console.error(
+            `EACCES: Permission denied deleting file ${localFilePath}`,
+            unlinkError
+          );
+        }
+      }
     }
     return null;
   }
