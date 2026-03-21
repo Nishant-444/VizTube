@@ -24,7 +24,7 @@ VizTube is a resource-optimized production MVP backend for a video-sharing platf
 **Live Infrastructure:**
 
 - **Compute:** AWS EC2 (t3.micro - 1GB RAM, 2 vCPU)
-- **Database:** Self-hosted PostgreSQL in Docker container
+- **Database:** PostgreSQL via `DATABASE_URL` (local Docker PostgreSQL for development)
 - **CDN:** Cloudinary (100MB video limit)
 - **Containerization:** Docker Compose (Node.js API + PostgreSQL)
 - **Security:** Cloudflare DNS/SSL + Certbot/Nginx SSL
@@ -43,7 +43,7 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 1. HTTPS request hits Cloudflare edge network
 2. DNS resolves, SSL terminated at Cloudflare
 3. Traffic proxied to AWS EC2 via Nginx reverse proxy
-4. Nginx reverse proxy with SSL/TLS (Certbot) forwards to Docker container (port 3000 blocked by AWS Security Groups)
+4. Nginx reverse proxy with SSL/TLS (Certbot) forwards traffic to the API container
 5. Dockerized Node.js API handles request
 6. Express routes to controller → Prisma ORM → PostgreSQL (Docker container)
 7. Media uploads processed via Multer (disk storage to `public/temp`), then asynchronously uploaded to Cloudinary
@@ -51,7 +51,7 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 **Key Infrastructure Decisions:**
 
 - **Docker Containers:** Isolated services with resource limits and easy rollback
-- **Self-hosted PostgreSQL:** Docker volume persistence for data durability
+- **PostgreSQL + Prisma:** Environment-based database connectivity with type-safe data access
 - **Certbot SSL/TLS:** Free SSL certificates with auto-renewal
 - **Asynchronous Media Processing:** Server-side Cloudinary integration via Multer disk storage
 - **Automated Docker Deployment:** GitHub Actions CI/CD with container rebuilds
@@ -70,17 +70,17 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 
-| Layer     | Technology          | Version | Purpose                                   |
-| --------- | ------------------- | ------- | ----------------------------------------- |
-| Runtime   | Node.js             | v18+    | Server execution environment              |
-| Language  | TypeScript          | v5.9.3  | Type safety, compile-time error detection |
-| Framework | Express.js          | v5.1.0  | HTTP request handling, middleware         |
-| Database  | PostgreSQL          | v14+    | Relational data storage                   |
-| ORM       | Prisma              | v7.2.0  | Type-safe database queries                |
-| Container | Docker + Compose    | -       | Containerization and orchestration        |
-| Auth      | JWT                 | -       | Stateless authentication                  |
-| Storage   | Cloudinary          | -       | Video/image CDN                           |
-| Security  | Helmet + Rate Limit | -       | HTTP headers, brute force prevention      |
+| Layer     | Technology               | Version | Purpose                                   |
+| --------- | ------------------------ | ------- | ----------------------------------------- |
+| Runtime   | Node.js                  | v18+    | Server execution environment              |
+| Language  | TypeScript               | v5.9.3  | Type safety, compile-time error detection |
+| Framework | Express.js               | v5.1.0  | HTTP request handling, middleware         |
+| Database  | PostgreSQL               | v14+    | Relational data storage                   |
+| ORM       | Prisma                   | v7.2.0  | Type-safe database queries                |
+| Container | Docker + Compose         | -       | Containerization and orchestration        |
+| Auth      | JWT                      | -       | Stateless authentication                  |
+| Storage   | Cloudinary               | -       | Video/image CDN                           |
+| Security  | CORS + HTTP-only Cookies | -       | Origin control and token protection       |
 
 ---
 
@@ -282,14 +282,13 @@ GET    /healthcheck             - Server status (no auth required)
 **Middleware Stack:**
 
 ```
-Request → Helmet (security headers)
-        → CORS (whitelisted origins)
-        → Rate Limiter (auth: 10/15min, API: 100/15min)
-        → Body Parser
-        → Cookie Parser
-        → JWT Verification
-        → Route Handler
-        → Error Handler
+Request → CORS (configured origin + credentials)
+    → JSON Body Parser / URL-Encoded Parser
+    → Static File Middleware (`public`)
+    → Cookie Parser
+    → Route-level JWT Verification
+    → Route Handler
+    → Error Handler
 ```
 
 ### Network Security
@@ -298,10 +297,9 @@ Request → Helmet (security headers)
 
 ```
 AWS Security Group Rules:
-- Port 3000 (API) blocked from public internet
 - Ports 80/443 open for HTTPS traffic
 - Port 22 SSH restricted (admin access only)
-- All traffic routed through Nginx reverse proxy
+- API traffic routed through Nginx reverse proxy
 ```
 
 **Cloudflare Configuration:**
@@ -369,16 +367,15 @@ Web Server: Nginx (reverse proxy, ports 80/443 → Docker)
 
 ```yaml
 Services:
-  - viztube-api: Node.js API container (port 3000)
-  - postgres: PostgreSQL 14+ container (port 5432)
-  - volumes: Persistent data storage for PostgreSQL
+  - api: Node.js API container (production)
+  - db: PostgreSQL container (local development via docker-compose.dev.yml)
 ```
 
 **Database Configuration:**
 
-- Self-hosted PostgreSQL in Docker container
-- Persistent Docker volumes for data storage
-- SSL/TLS connection enforced
+- PostgreSQL connection configured via `DATABASE_URL`
+- Local development PostgreSQL available via `docker-compose.dev.yml`
+- Prisma used for schema migrations and query access
 
 ---
 
@@ -390,9 +387,9 @@ Services:
 
 **Containerization:** Fully Dockerized application (Node.js API + PostgreSQL) running in isolated containers.
 
-**Database:** Self-hosted PostgreSQL with persistent Docker volumes.
+**Database:** PostgreSQL connected through `DATABASE_URL` (Dockerized locally in development).
 
-**Security:** SSL/TLS encryption via Certbot & Nginx. Attack surface reduced by blocking direct API port access.
+**Security:** SSL/TLS encryption via Certbot & Nginx with reverse-proxy based traffic control.
 
 ---
 
@@ -410,8 +407,8 @@ Cloudinary account
 
 ```bash
 # Clone repository
-git clone https://github.com/Nishant-444/Viztube.git
-cd Viztube
+git clone https://github.com/Nishant-444/VizTube.git
+cd VizTube
 
 # Install dependencies
 npm install
@@ -423,6 +420,9 @@ cp .env.sample .env
 # Setup database
 npx prisma generate
 npx prisma migrate dev
+
+# Optional: run local PostgreSQL via Docker
+docker compose -f docker-compose.dev.yml up -d
 
 # Build TypeScript
 npm run build
