@@ -1,0 +1,187 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// if you ever change the schema again chain-run these commands ---- `npx prisma migrate dev --name your_migration_name && npx prisma generate`
+generator client {
+  provider = "prisma-client"
+  // output   = "../node_modules/.prisma/client"
+  url      = env("DATABASE_URL")
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid(7))
+  username     String   @unique
+  email        String   @unique
+  fullname     String
+  avatar       String   @default("https://res.cloudinary.com/diedfzlu6/image/upload/v1762252473/user_u0bufe.png")
+  coverImage   String   @default("https://res.cloudinary.com/diedfzlu6/image/upload/v1762252473/user_u0bufe.png")
+  password     String
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  videos         Video[]
+  comments       Comment[]
+  likes          Like[]
+  playlists      Playlist[]
+  subscriptions  Subscription[] @relation("Subscriber")
+  subscribers    Subscription[] @relation("Channel")
+  tweets         Tweet[]
+  watchHistories WatchHistory[]
+
+  @@index([username])
+  @@index([email])
+}
+
+model Video {
+  id                String   @id @default(uuid(7))
+  videoFileUrl      String
+  videoFilePublicId String
+  thumbnailUrl      String
+  thumbnailPublicId String
+  title             String
+  description       String?
+  views             Int      @default(0)
+  duration          Float
+  isPublished       Boolean  @default(true)
+  userId            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // ai feature flags
+  hasTranscript  Boolean @default(false)
+  allowPublicQnA Boolean @default(false)
+
+  // Relations
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  likes          Like[]
+  playlistVideos PlaylistVideo[]
+  watchHistories WatchHistory[]
+  transcript     Transcript?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid(7))
+  content   String
+  userId    String
+  videoId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  likes Like[]
+
+  @@index([videoId])
+  @@index([userId])
+}
+
+model Like {
+  id        String   @id @default(uuid(7))
+  userId    String
+  videoId   String?
+  commentId String?
+  tweetId   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video   Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  tweet   Tweet?   @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  // Constraints: User can like a video OR comment once
+  @@unique([userId, videoId])
+  @@unique([userId, commentId])
+  @@unique([userId, tweetId])
+  @@index([userId])
+}
+
+model Playlist {
+  id          String   @id @default(uuid(7))
+  name        String
+  description String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos PlaylistVideo[]
+
+  @@index([userId])
+}
+
+model PlaylistVideo {
+  id         String   @id @default(uuid(7))
+  playlistId String
+  videoId    String
+  addedAt    DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video    Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, videoId])
+}
+
+model Subscription {
+  id           String   @id @default(uuid(7))
+  subscriberId String
+  channelId    String
+  createdAt    DateTime @default(now())
+
+  subscriber User @relation("Subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  channel    User @relation("Channel", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, channelId])
+  @@index([subscriberId])
+  @@index([channelId])
+}
+
+model Tweet {
+  id        String   @id @default(uuid(7))
+  content   String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes Like[]
+
+  @@index([userId])
+}
+
+model WatchHistory {
+  id        String   @id @default(uuid(7))
+  userId    String
+  videoId   String
+  watchedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId])
+}
+
+model Transcript {
+  id        String   @id @default(uuid(7))
+  videoId   String   @unique
+  content   String
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
