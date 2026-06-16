@@ -1,48 +1,81 @@
 import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
-import { prisma } from '../lib/prisma.js';
+import { prisma } from '../lib/prisma.js'; // Ensure this path matches your setup
+
+const AI_WORKER_BASE_URL = process.env.AI_WORKER_URL || 'http://localhost:8000';
 
 export const triggerBackgroundIngestion = async (
   videoId: string,
   filePath: string
 ) => {
-  const AI_WORKER_URL =
-    process.env.AI_WORKER_URL || 'http://localhost:8000/api/rag/ingest';
-
   try {
     const form = new FormData();
-    form.append('video_id', `vid_${videoId}`);
+    // Pass the raw Prisma UUID
+    form.append('video_id', videoId);
     form.append('file', fs.createReadStream(filePath));
 
-    // Capture the response from Python
-    const response = await axios.post(AI_WORKER_URL, form, {
-      headers: { ...form.getHeaders() },
-    });
+    // Capture the response from Python (Fixed routing to match /api/rag/ingest)
+    const response = await axios.post(
+      `${AI_WORKER_BASE_URL}/api/rag/ingest`,
+      form,
+      {
+        headers: { ...form.getHeaders() },
+      }
+    );
 
-    // Save the transcript to Postgres if Python returned it
-    if (response.data.transcript) {
+    let transcriptExtracted = false;
+
+    // If Python sends the raw transcript back AND it's not empty, save it
+    if (response.data.transcript && response.data.transcript.length > 0) {
       await prisma.transcript.create({
-        data: {
-          videoId: videoId,
-          content: response.data.transcript,
-        },
+        data: { videoId: videoId, content: response.data.transcript },
       });
-
-      // Mark the video as having a transcript
-      await prisma.video.update({
-        where: { id: videoId },
-        data: { hasTranscript: true },
-      });
+      transcriptExtracted = true; // The AI actually found words!
     }
 
-    console.log(`✅ Background AI ingestion completed for video: ${videoId}`);
+    // THE SWITCH FLIP
+    await prisma.video.update({
+      where: { id: videoId },
+      data: {
+        processingStatus: 'COMPLETED',
+        hasTranscript: transcriptExtracted, // Now dynamically toggled based on reality
+        allowPublicQnA: true,
+      },
+    });
+
+    console.log(
+      `✅ Background AI ingestion completed and DB updated for video: ${videoId}`
+    );
   } catch (error: any) {
+    const errorDetails = error.response?.data || error.message || String(error);
     console.error(
       `❌ Background AI ingestion failed for video ${videoId}:`,
-      error.message
+      errorDetails
     );
+
+    // FAILURE STATE: Tell the UI to stop spinning and show an error
+    await prisma.video
+      .update({
+        where: { id: videoId },
+        data: {
+          processingStatus: 'FAILED',
+          hasTranscript: false,
+          allowPublicQnA: false,
+        },
+      })
+      .catch((e) =>
+        console.error('[DB Error] Failed to update failure state', e)
+      );
   } finally {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    // THE AI JANITOR
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`[AI Janitor] Deleted background video file: ${filePath}`);
+      } catch (e) {
+        console.error(`[Fatal Cleanup] Could not delete ${filePath}`, e);
+      }
+    }
   }
 };

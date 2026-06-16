@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma.js';
 
 // id is number not a string in postgres
 interface JWTPayload {
-  id: number;
+  id: string;
   email: string;
   username: string;
   fullname: string;

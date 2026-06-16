@@ -7,7 +7,7 @@ const ALLOWED_IMAGE_TYPES = [
   'image/webp',
   'image/jpg',
 ];
-const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_MB = 20;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 // individual file validator
@@ -82,6 +82,46 @@ export const validateCoverImageFile = (
   // check integrity
   // TODO: Move to persistent storage
   validateFile(coverImageFile, 'Cover Image');
+
+  next();
+};
+
+const ALLOWED_VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/x-matroska', // .mkv
+  'video/quicktime', // .mov
+];
+
+// Videos require a significantly larger buffer than avatars
+const MAX_VIDEO_SIZE_MB = 100;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+
+const validateVideo = (file: Express.Multer.File, fieldName: string) => {
+  if (!ALLOWED_VIDEO_TYPES.includes(file.mimetype)) {
+    throw new ApiError(400, `${fieldName} must be an MP4, WEBM, MKV, or MOV`);
+  }
+  if (file.size > MAX_VIDEO_SIZE_BYTES) {
+    throw new ApiError(
+      400,
+      `${fieldName} must be smaller than ${MAX_VIDEO_SIZE_MB}MB`
+    );
+  }
+};
+
+export const validateAiVideoFile = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // We use req.file here because the AI route uses upload.single('file')
+  const file = req.file;
+
+  if (!file) {
+    throw new ApiError(400, 'Video file is required for AI ingestion');
+  }
+
+  validateVideo(file, 'Video');
 
   next();
 };

@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
@@ -12,7 +13,7 @@ app.use(
 );
 
 // common middlewares
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
@@ -232,6 +233,7 @@ import likeRouter from './routes/like.routes.js';
 import subscriptionRouter from './routes/subscription.routes.js';
 import playlistRouter from './routes/playlist.routes.js';
 import dashboardRouter from './routes/dashboard.routes.js';
+import aiRouter from './routes/ai.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 // routes
@@ -244,6 +246,7 @@ app.use('/api/v2/likes', likeRouter);
 app.use('/api/v2/subscriptions', subscriptionRouter);
 app.use('/api/v2/playlist', playlistRouter);
 app.use('/api/v2/dashboard', dashboardRouter);
+app.use('/api/v2/rag', aiRouter);
 
 // error handler
 app.use(errorHandler);

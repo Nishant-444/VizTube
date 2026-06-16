@@ -16,6 +16,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ProcessingStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id           String   @id @default(uuid(7))
   username     String   @unique
@@ -58,8 +64,9 @@ model Video {
   updatedAt         DateTime @updatedAt
 
   // ai feature flags
-  hasTranscript  Boolean @default(false)
-  allowPublicQnA Boolean @default(false)
+  processingStatus ProcessingStatus @default(PROCESSING)
+  hasTranscript    Boolean          @default(false)
+  allowPublicQnA   Boolean          @default(false)
 
   // Relations
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)

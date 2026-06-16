@@ -8,11 +8,10 @@ import {
 import { CloudinaryResponse } from '../types/cloudinary.types.js';
 import { prisma } from '../lib/prisma.js';
 import fs from 'fs';
-import path, { normalize } from 'path';
-import axios from 'axios';
-import FormData from 'form-data';
-import { triggerBackgroundIngestion } from '../utils/aiPipeline.js';
+import path from 'path';
 import { getSingleParam } from '../utils/normalize.js';
+import { ProcessingStatus } from '../generated/client/enums.js';
+import { triggerBackgroundIngestion } from '../utils/aiPipeline.js';
 
 const projectTempDir = path.resolve(process.cwd(), 'public', 'temp');
 const containerTempDir = path.resolve('/app', 'public', 'temp');
@@ -49,51 +48,34 @@ const removeLocalFile = (localPath: string) => {
 
 // exported functions
 const publishAVideo = asyncHandler(async (req, res) => {
-  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+  const { title, description } = req.body;
+  const userId = (req as any).user?.id;
 
-  const { title, description, generateTranscript, allowPublicQnA } = req.body;
+  if (!title) throw new ApiError(400, 'Title is required');
+
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-  const maxVideoDuration = parseInt(
-    process.env.MAX_VIDEO_DURATION || '120',
-    10
-  );
-
   const videoLocalPath = files?.videoFile?.[0]?.path;
   const thumbnailLocalPath = files?.thumbnail?.[0]?.path;
 
-  if (!title || !videoLocalPath || !thumbnailLocalPath) {
-    if (videoLocalPath) removeLocalFile(videoLocalPath);
-    if (thumbnailLocalPath) removeLocalFile(thumbnailLocalPath);
-    throw new ApiError(
-      400,
-      'Title, Video file, and Thumbnail are all required'
-    );
+  if (!videoLocalPath) throw new ApiError(400, 'Video file is required');
+  if (!thumbnailLocalPath) {
+    fs.unlinkSync(videoLocalPath);
+    throw new ApiError(400, 'Thumbnail is required');
   }
 
-  let videoUpload: CloudinaryResponse | null = null;
-  let thumbnailUpload: CloudinaryResponse | null = null;
-
-  // NOTE: currently we are first uploading the video on cloudinary then checking the duration, which is not good for scale, future plan to use ffprobe and check the duration of the file in the public/temp folder before starting a request to cloudinary
-  // Also need to do stream in chunks for better processing and lesser load and resource usage
+  let videoRecordId: string | null = null;
 
   try {
-    videoUpload = await uploadOnCloudinary(videoLocalPath);
-    const duration = videoUpload?.duration ?? 0;
-    if (duration > maxVideoDuration) {
-      await deleteFromCloudinary(videoUpload?.public_id as string);
-      throw new ApiError(
-        400,
-        `Video exceeds the maximum allowed duration of ${maxVideoDuration} seconds.`
-      );
-    }
-
-    thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
+    const [videoUpload, thumbnailUpload] = await Promise.all([
+      uploadOnCloudinary(videoLocalPath),
+      uploadOnCloudinary(thumbnailLocalPath),
+    ]);
 
     if (!videoUpload || !thumbnailUpload) {
-      throw new ApiError(500, 'Failed to upload video or thumbnail');
+      throw new ApiError(500, 'Failed to upload files to cloud storage');
     }
 
-    const video = await prisma.video.create({
+    const videoRecord = await prisma.video.create({
       data: {
         title,
         description: description || '',
@@ -102,34 +84,47 @@ const publishAVideo = asyncHandler(async (req, res) => {
         thumbnailUrl: thumbnailUpload.url,
         thumbnailPublicId: thumbnailUpload.public_id,
         duration: videoUpload.duration || 0,
+        processingStatus: ProcessingStatus.PROCESSING,
         isPublished: true,
-        userId: req.user.id,
-        hasTranscript: generateTranscript === 'true',
-        allowPublicQnA: allowPublicQnA === 'true',
+        userId: userId,
       },
     });
-    if (video.hasTranscript) {
-      triggerBackgroundIngestion(video.id, videoLocalPath).catch((err) => {
-        console.error('AI trigger failed:', err);
-      });
-    } else {
-      removeLocalFile(videoLocalPath);
-    }
 
-    return res
-      .status(201)
-      .json(new ApiResponse(201, video, 'Video published successfully'));
-  } catch (error) {
-    console.error('Video Publication Failed. Rolling back uploads...');
+    videoRecordId = videoRecord.id;
 
-    if (videoUpload?.public_id) {
-      await deleteFromCloudinary(videoUpload.public_id);
-    }
-    if (thumbnailUpload?.public_id) {
-      await deleteFromCloudinary(thumbnailUpload.public_id);
-    }
+    const aiResponse = triggerBackgroundIngestion(
+      videoRecord.id,
+      videoLocalPath
+    ).catch((err) => console.error('Background AI trigger failed: ', err));
 
-    throw new ApiError(500, 'Video publication failed');
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          video: videoRecord,
+        },
+        'Video published successfully. AI ingestion started in the background.'
+      )
+    );
+  } catch (error: any) {
+    if (videoRecordId) {
+      await prisma.video
+        .update({
+          where: { id: videoRecordId },
+          data: { processingStatus: ProcessingStatus.FAILED },
+        })
+        .catch((e) => console.error('Failed to update status', e));
+    }
+    throw new ApiError(500, error?.message || 'Error publishing video');
+  } finally {
+    // const filesToClean = [videoLocalPath, thumbnailLocalPath];
+    // filesToClean.forEach((filePath) => {
+    //   if (filePath) removeLocalFile(filePath);
+    // });
+    if (thumbnailLocalPath) {
+      removeLocalFile(thumbnailLocalPath);
+      console.log(`[Gateway Janitor] Cleared thumbnail: ${thumbnailLocalPath}`);
+    }
   }
 });
 
@@ -262,7 +257,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
   if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
 
-  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
   const video = await prisma.video.findUnique({
     where: { id: videoId },
   });
@@ -280,7 +274,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
   const cleanupFiles = async () => {
     try {
       if (video.videoFilePublicId) {
-        await deleteFromCloudinary(video.videoFilePublicId);
+        await deleteFromCloudinary(video.videoFilePublicId, 'video');
       }
       if (video.thumbnailPublicId) {
         await deleteFromCloudinary(video.thumbnailPublicId);
@@ -341,7 +335,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
   if (userId) {
-    whereCondition.userId = parseInt(userId as string);
+    whereCondition.userId = userId as string;
   }
 
   const page = Number(req.query.page) || 1;
@@ -382,65 +376,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
   );
 });
 
-const uploadAndIngestVideo = asyncHandler(async (req, res) => {
-  try {
-    // 1. Ensure Multer caught the file locally
-    const videoFile = req.file;
-    if (!videoFile) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'No video file provided' });
-    }
-
-    // 2. Generate a unique ID or use the database record ID
-    const videoId = `vid_${Date.now()}`;
-
-    // 3. Prepare the multipart form data for the Python AI Worker
-    const formData = new FormData();
-    formData.append('video_id', videoId);
-    // Create a read stream from the local temp disk file
-    formData.append('file', fs.createReadStream(videoFile.path), {
-      filename: videoFile.originalname,
-      contentType: videoFile.mimetype,
-    });
-
-    // 4. Fire internal HTTP request to the local FastAPI worker
-    const aiWorkerUrl = 'http://localhost:8000/api/rag/ingest';
-    const aiResponse = await axios.post(aiWorkerUrl, formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-    });
-
-    // 5. Clean up the local temp file after processing
-    fs.unlinkSync(videoFile.path);
-
-    // 6. Return response to client or proceed to save metadata in PostgreSQL
-    return res.status(200).json({
-      success: true,
-      message: 'Video uploaded and ingested into AI pipeline successfully.',
-      data: {
-        videoId,
-        aiWorkerStatus: aiResponse.data,
-      },
-    });
-  } catch (error: any) {
-    // Ensure file cleanup if error occurs mid-stream
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
-    console.error('Internal service ingestion failed:', error.message);
-    return res.status(500).json({
-      success: false,
-      message: 'AI Ingestion failed.',
-      error: error.response?.data || error.message,
-    });
-  }
-});
-
 // 6 exports
 export {
   getAllVideos,
@@ -449,5 +384,4 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
-  uploadAndIngestVideo,
 };

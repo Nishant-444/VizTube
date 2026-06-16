@@ -8,3 +8,9 @@
 *.db
 *.db-journal
 # /public/temp/*
+
+# Python
+venv/
+__pycache__/
+.env
+.pytest_cache/
