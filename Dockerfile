@@ -1,40 +1,23 @@
-# build stage
-FROM node:22-alpine AS builder
-
+# 1. Use Node 22 Alpine
+FROM node:22-alpine AS base
 WORKDIR /app
+RUN npm install -g pnpm
 
-COPY package*.json ./
+# 2. Copy dependencies
+COPY package.json pnpm-lock.yaml* ./
 COPY prisma ./prisma/
 
-# install dependencies
-RUN npm ci
+# 3. Install and Rebuild
+RUN pnpm install --ignore-scripts
+RUN pnpm rebuild bcrypt prisma @prisma/client
+RUN pnpm prisma generate
 
+# 4. Copy source code
 COPY . .
 
-# generate prisma client and build
-RUN npx prisma generate
-RUN npm run build
+# 5. --- NEW: Build the TypeScript ---
+RUN pnpm run build 
 
-# remove devDependencies to reduce size
-RUN npm prune --production
-
-# run stage
-FROM node:22-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-
-# create temp upload directory first
-RUN mkdir -p public/temp
-
-# copy only production-only artifacts with node ownership
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/package.json ./package.json
-COPY --from=builder --chown=node:node /app/dist ./dist
-COPY --from=builder --chown=node:node /app/prisma ./prisma
-
-RUN chown -R node:node public/temp
-
-USER node
-
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
+# 6. Expose and Start
+EXPOSE 5000
+CMD ["pnpm", "start"]

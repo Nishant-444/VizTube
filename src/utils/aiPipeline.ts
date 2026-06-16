@@ -2,6 +2,7 @@ import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
 import { prisma } from '../lib/prisma.js'; // Ensure this path matches your setup
+import { ApiError } from './ApiError.js';
 
 const AI_WORKER_BASE_URL = process.env.AI_WORKER_URL || 'http://localhost:8000';
 
@@ -39,7 +40,7 @@ export const triggerBackgroundIngestion = async (
       where: { id: videoId },
       data: {
         processingStatus: 'COMPLETED',
-        hasTranscript: transcriptExtracted, // Now dynamically toggled based on reality
+        hasTranscript: transcriptExtracted,
         allowPublicQnA: true,
       },
     });
@@ -48,11 +49,11 @@ export const triggerBackgroundIngestion = async (
       `✅ Background AI ingestion completed and DB updated for video: ${videoId}`
     );
   } catch (error: any) {
-    const errorDetails = error.response?.data || error.message || String(error);
-    console.error(
-      `❌ Background AI ingestion failed for video ${videoId}:`,
-      errorDetails
-    );
+    if (error instanceof AggregateError) {
+      error.errors.forEach((e: any) => console.error('Inner Error:', e));
+    } else {
+      console.error('Caught Error:', error);
+    }
 
     // FAILURE STATE: Tell the UI to stop spinning and show an error
     await prisma.video
@@ -67,6 +68,7 @@ export const triggerBackgroundIngestion = async (
       .catch((e) =>
         console.error('[DB Error] Failed to update failure state', e)
       );
+    throw new ApiError(500, error?.message || 'AI Processing failed');
   } finally {
     // THE AI JANITOR
     if (filePath && fs.existsSync(filePath)) {

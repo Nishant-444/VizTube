@@ -1,7 +1,37 @@
-node_modules
-dist
-src/generated
+# Exclude dependency directories
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Exclude local environment files and git configuration
+.git/
+.gitignore
 .env
+*.log
+
+# Exclude local media/storage if you have any test videos locally
+storage/
+uploads/
+dist/
+build/
+
+# Exclude Node dependencies
+node_modules/
 npm-debug.log
-Dockerfile
-.git
+pnpm-error.log
+
+# Exclude Python/AI stuff so Node doesn't copy it
+ai-worker/.venv/
+ai-worker/venv/
+ai-worker/__pycache__/
+*.pyc
+
+# Exclude Git and local env
+.git/
+.env
+
+# Exclude local build folders
+dist/
+build/

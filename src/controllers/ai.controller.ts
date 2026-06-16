@@ -2,7 +2,7 @@ import fs from 'fs';
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { ApiResponse } from '../utils/ApiResponse.js'; // Assuming you have a standard response formatter
+import { ApiResponse } from '../utils/ApiResponse.js';
 import { ingestVideoForAI, askAiAboutVideo } from '../services/ai.service.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -11,85 +11,27 @@ export const handleVideoUpload = asyncHandler(
     const file = req.file;
     const { title, description } = req.body;
 
-    const userId = (req as any).user?._id;
-
-    if (!file) {
-      throw new ApiError(400, 'Video file is required for processing');
-    }
-
-    if (!title) {
-      fs.unlinkSync(file.path);
-      throw new ApiError(400, 'Video title is required');
-    }
-
-    let videoRecord;
+    if (!file) throw new ApiError(400, 'Video file is required');
 
     try {
-      // 2. Save Initial Metadata to Node.js Database
-      // We do this first so we have a reliable videoId to send to Python
-      /*
-        videoRecord = await Video.create({
-            title,
-            description,
-            owner: userId,
-            processingStatus: 'processing', // Keep track of the AI status
-            originalFilePath: file.path // Or S3 URL if you move to cloud storage
-        });
-        */
-
-      // MOCK ID for current testing without DB:
       const videoId = `vid_${Date.now()}`;
 
-      // 3. Fire the file to the FastAPI Worker
-      // This streams the file directly from /public/temp to port 8000
+      // Just call the service. The service now handles its own cleanup.
       const aiResponse = await ingestVideoForAI(videoId, file.path);
 
-      // 4. Update Database on Success (Optional but recommended)
-      /*
-        await Video.findByIdAndUpdate(videoRecord._id, {
-            processingStatus: 'completed',
-            aiChunks: aiResponse.chunks_processed
-        });
-        */
-
-      // 5. Return success to the client
-      return res.status(200).json(
-        // Replace with your ApiResponse wrapper if you use one
-        {
-          status: 200,
-          message: 'Video successfully ingested by AI',
-          data: {
-            videoId: videoId, // Or videoRecord._id
-            ai_details: aiResponse,
-          },
-        }
-      );
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { videoId, ai_details: aiResponse },
+            'Video ingested'
+          )
+        );
     } catch (error: any) {
-      // If the AI worker fails or times out, update the DB status
-      /*
-        if (videoRecord) {
-            await Video.findByIdAndUpdate(videoRecord._id, { processingStatus: 'failed' });
-        }
-        */
-      throw new ApiError(
-        500,
-        error?.message || 'AI Processing failed during ingestion'
-      );
-    } finally {
-      // 6. THE JANITOR (Critical Server Maintenance)
-      // This block runs no matter what happens above. It ensures your hard drive never fills up.
-      if (file && fs.existsSync(file.path)) {
-        try {
-          fs.unlinkSync(file.path);
-          console.log(`[Cleanup] Deleted temp file: ${file.path}`);
-        } catch (cleanupError) {
-          console.error(
-            `[Fatal Cleanup Error] Failed to delete ${file.path}`,
-            cleanupError
-          );
-        }
-      }
+      throw new ApiError(500, error?.message || 'AI Ingestion failed');
     }
+    // NO finally block here that deletes the file!
   }
 );
 
@@ -101,6 +43,10 @@ export const askVideoQuestion = asyncHandler(
       select: { title: true, description: true },
     });
 
+    if (!videoMeta) {
+      throw new ApiError(404, 'Video metadata not found in database');
+    }
+
     if (!video_id || !question) {
       throw new ApiError(400, 'Both video_id and question are required');
     }
@@ -109,11 +55,9 @@ export const askVideoQuestion = asyncHandler(
       // Call the service that hits your FastAPI /ask endpoint
       const answerData = await askAiAboutVideo(video_id, question, videoMeta);
 
-      return res.status(200).json({
-        status: 200,
-        message: 'AI generated an answer',
-        data: answerData,
-      });
+      return res
+        .status(200)
+        .json(new ApiResponse(200, answerData, 'AI generated an answer'));
     } catch (error: any) {
       throw new ApiError(
         500,

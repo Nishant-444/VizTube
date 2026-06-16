@@ -6,14 +6,16 @@
 
 // if you ever change the schema again chain-run these commands ---- `npx prisma migrate dev --name your_migration_name && npx prisma generate`
 generator client {
-  provider = "prisma-client"
+  provider        = "prisma-client"
   // output   = "../node_modules/.prisma/client"
-  url      = env("DATABASE_URL")
-  output   = "../src/generated/client"
+  url             = env("DATABASE_URL")
+  output          = "../src/generated/client"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 enum ProcessingStatus {
@@ -75,6 +77,7 @@ model Video {
   playlistVideos PlaylistVideo[]
   watchHistories WatchHistory[]
   transcript     Transcript?
+  documentChunks DocumentChunk[]
 
   @@index([userId])
   @@index([createdAt])
@@ -191,4 +194,15 @@ model Transcript {
   createdAt DateTime @default(now())
 
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+model DocumentChunk {
+  id        String                     @id @default(uuid(7))
+  videoId   String
+  content   String                     @db.Text
+  embedding Unsupported("vector(384)")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
 }

@@ -1,14 +1,26 @@
 version: '3.8'
 
 services:
-  api:
-    image: nishant100606/viztube:latest
-    restart: always
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: viztube-gateway
     ports:
-      - '${PORT}:${PORT}'
+      - '3000:3000'
     env_file:
       - .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${PORT}
+    depends_on:
+      - ai-worker
+    restart: unless-stopped
+
+  ai-worker:
+    build:
+      context: ./ai-worker
+      dockerfile: Dockerfile
+    container_name: viztube-ai-worker
+    ports:
+      - '8000:8000'
+    env_file:
+      - ./ai-worker/.env
+    restart: unless-stopped

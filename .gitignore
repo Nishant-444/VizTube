@@ -10,7 +10,7 @@
 # /public/temp/*
 
 # Python
-venv/
+.venv/
 __pycache__/
 .env
 .pytest_cache/
