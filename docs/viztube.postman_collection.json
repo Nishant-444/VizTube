@@ -1,62 +1,12 @@
 {
   "info": {
+    "_postman_id": "092c331a-986f-41f8-924d-b453a4fdd0b0",
     "name": "VIZTUBE API Collection",
-    "description": "Complete API collection for VIZTUBE - A YouTube-inspired video streaming platform. Hosted on AWS EC2 with Nginx & Cloudflare.",
-    "version": "2.0.0",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Complete API collection for VIZTUBE - A YouTube-inspired video streaming platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "00000000",
+    "_collection_link": "https://go.postman.co/collection/00000000-092c331a-986f-41f8-924d-b453a4fdd0b0?source=collection_link"
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{accessToken}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "https://viztube.me/api/v2",
-      "type": "string"
-    },
-    {
-      "key": "accessToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "videoId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "commentId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "tweetId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "playlistId",
-      "value": "",
-      "type": "string"
-    }
-  ],
   "item": [
     {
       "name": "Health Check",
@@ -70,9 +20,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/healthcheck",
+              "raw": "{{baseUrl}}/healthcheck/",
               "host": ["{{baseUrl}}"],
-              "path": ["healthcheck"]
+              "path": ["healthcheck", ""]
             },
             "description": "Check if the server is running"
           },
@@ -89,15 +39,19 @@
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "if (pm.response.code === 200 || pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data._id) {",
-                  "        pm.collectionVariables.set('userId', jsonData.data._id);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -112,33 +66,33 @@
               "formdata": [
                 {
                   "key": "fullname",
-                  "value": "John Doe",
+                  "value": "Test User",
                   "type": "text"
                 },
                 {
                   "key": "username",
-                  "value": "johndoe",
+                  "value": "testuser123",
                   "type": "text"
                 },
                 {
                   "key": "email",
-                  "value": "john@example.com",
+                  "value": "testuser@example.com",
                   "type": "text"
                 },
                 {
                   "key": "password",
-                  "value": "Password@123",
+                  "value": "ChangeMe123",
                   "type": "text"
                 },
                 {
                   "key": "avatar",
                   "type": "file",
-                  "src": []
+                  "src": ""
                 },
                 {
                   "key": "coverImage",
                   "type": "file",
-                  "src": []
+                  "src": ""
                 }
               ]
             },
@@ -167,7 +121,9 @@
                   "    }",
                   "}"
                 ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -179,7 +135,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"Password@123\"\n}",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"ChangeMe123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -211,7 +167,9 @@
                   "    }",
                   "}"
                 ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -223,7 +181,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"johndoe\",\n    \"password\": \"Password@123\"\n}",
+              "raw": "{\n    \"username\": \"testuser123\",\n    \"password\": \"ChangeMe123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -242,6 +200,9 @@
         {
           "name": "Logout User",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [],
             "url": {
@@ -303,7 +264,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"oldPassword\": \"Password@123\",\n    \"newPassword\": \"NewPassword@456\"\n}",
+              "raw": "{\n    \"oldPassword\": \"ChangeMe123\",\n    \"newPassword\": \"NewPass123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -340,7 +301,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"fullname\": \"John Updated Doe\",\n    \"email\": \"johnupdated@example.com\",\n    \"username\": \"johndoeupdated\"\n}",
+              "raw": "{\n    \"fullname\": \"test user updated\",\n    \"email\": \"test@example.com\",\n    \"username\": \"testuser\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -367,7 +328,7 @@
                 {
                   "key": "avatar",
                   "type": "file",
-                  "src": []
+                  "src": ""
                 }
               ]
             },
@@ -391,7 +352,7 @@
                 {
                   "key": "coverImage",
                   "type": "file",
-                  "src": []
+                  "src": ""
                 }
               ]
             },
@@ -416,7 +377,7 @@
               "variable": [
                 {
                   "key": "username",
-                  "value": "johndoe"
+                  "value": "testuser"
                 }
               ]
             },
@@ -457,35 +418,43 @@
                   "    }",
                   "}"
                 ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "title",
-                  "value": "My Awesome Video",
-                  "type": "text"
+                  "type": "text",
+                  "value": "My First Video"
                 },
                 {
                   "key": "description",
-                  "value": "This is a test video description",
-                  "type": "text"
+                  "type": "text",
+                  "value": "this is the description of my first video"
                 },
                 {
                   "key": "videoFile",
                   "type": "file",
-                  "src": []
+                  "src": "sample_video.mp4"
                 },
                 {
                   "key": "thumbnail",
                   "type": "file",
-                  "src": []
+                  "src": "sample_thumbnail.jpg"
                 }
               ]
             },
@@ -583,7 +552,7 @@
                 {
                   "key": "thumbnail",
                   "type": "file",
-                  "src": [],
+                  "value": null,
                   "disabled": true
                 }
               ]
@@ -640,6 +609,29 @@
               ]
             },
             "description": "Toggle video publish status (owner only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Ingest Test",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "videoFile",
+                  "type": "file",
+                  "src": "sample_audio.mp3"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/videos/ingest-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["videos", "ingest-test"]
+            }
           },
           "response": []
         }
@@ -781,7 +773,9 @@
                   "    }",
                   "}"
                 ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -1234,6 +1228,54 @@
           "response": []
         }
       ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "videoId",
+      "value": ""
+    },
+    {
+      "key": "commentId",
+      "value": ""
+    },
+    {
+      "key": "tweetId",
+      "value": ""
+    },
+    {
+      "key": "playlistId",
+      "value": ""
+    },
+    {
+      "key": "uniqueSuffix",
+      "value": ""
     }
   ]
 }
