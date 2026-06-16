@@ -2,10 +2,10 @@
 
 [![Deploy Docker to EC2](https://github.com/Nishant-444/VizTube/actions/workflows/deploy.yml/badge.svg)](https://github.com/Nishant-444/VizTube/actions/workflows/deploy.yml)
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Status:** Live Deployment (MVP)  
 **Live API Endpoint:** [https://viztube.me](https://viztube.me)  
-**Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, Docker, AWS
+**Tech Stack:** TypeScript, Node.js, Express, PostgreSQL, Prisma, Docker, AWS, FastAPI, ChromaDB, Whisper
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -14,19 +14,29 @@
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-orange?style=for-the-badge)
 
 ---
 
 ## Project Overview
 
-VizTube is a resource-optimized production MVP backend for a video-sharing platform, deployed on AWS with a containerized architecture. The system features secure JWT authentication, Cloudinary CDN integration, and a fully normalized PostgreSQL database managed through Prisma ORM.
+VizTube is a resource-optimized production MVP backend for a video-sharing platform, deployed on AWS with a containerized architecture. The system features secure JWT authentication, Cloudinary CDN integration, a fully normalized PostgreSQL database managed through Prisma ORM, and an AI-powered RAG engine for intelligent video content querying.
+
+### AI-Powered RAG Engine (New in v2.1)
+
+VizTube now features an intelligent RAG (Retrieval-Augmented Generation) pipeline, allowing users to query video content directly.
+
+- **Automatic Transcription:** Videos are processed via OpenAI Whisper upon ingestion.
+- **Vector Search:** Transcripts are chunked and stored in a ChromaDB vector database.
+- **Contextual QA:** Users can ask questions about video content, with the AI providing precise answers and source citations.
 
 **Live Infrastructure:**
 
 - **Compute:** AWS EC2 (t3.micro - 1GB RAM, 2 vCPU)
 - **Database:** PostgreSQL via `DATABASE_URL` (local Docker PostgreSQL for development)
 - **CDN:** Cloudinary (100MB video limit)
-- **Containerization:** Docker Compose (Node.js API + PostgreSQL)
+- **Containerization:** Docker Compose (Node.js API + PostgreSQL + FastAPI AI Worker)
 - **Security:** Cloudflare DNS/SSL + Certbot/Nginx SSL
 - **Process Manager:** Docker containers
 
@@ -35,7 +45,7 @@ VizTube is a resource-optimized production MVP backend for a video-sharing platf
 ## System Architecture
 
 ```
-Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API + PostgreSQL) → Cloudinary
+Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API + PostgreSQL + AI Worker) → Cloudinary
 ```
 
 **Request Flow:**
@@ -48,6 +58,11 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 6. Express routes to controller → Prisma ORM → PostgreSQL (Docker container)
 7. Media uploads processed via Multer (disk storage to `public/temp`), then asynchronously uploaded to Cloudinary
 
+**AI Processing Flow:**
+
+1. **Ingestion:** API receives video file → Extracts audio → Transcribes via Whisper → Chunks text → Embeds & stores in ChromaDB.
+2. **Querying:** User submits question → Search query in ChromaDB → Retrieve relevant transcript chunks → LLM (OpenRouter) generates answer with citations.
+
 **Key Infrastructure Decisions:**
 
 - **Docker Containers:** Isolated services with resource limits and easy rollback
@@ -55,6 +70,7 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 - **Certbot SSL/TLS:** Free SSL certificates with auto-renewal
 - **Asynchronous Media Processing:** Server-side Cloudinary integration via Multer disk storage
 - **Automated Docker Deployment:** GitHub Actions CI/CD with container rebuilds
+- **FastAPI AI Worker:** Decoupled Python microservice for RAG pipeline, independently scalable
 
 ---
 
@@ -69,18 +85,43 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)
 
-| Layer     | Technology               | Version | Purpose                                   |
-| --------- | ------------------------ | ------- | ----------------------------------------- |
-| Runtime   | Node.js                  | v18+    | Server execution environment              |
-| Language  | TypeScript               | v5.9.3  | Type safety, compile-time error detection |
-| Framework | Express.js               | v5.1.0  | HTTP request handling, middleware         |
-| Database  | PostgreSQL               | v14+    | Relational data storage                   |
-| ORM       | Prisma                   | v7.2.0  | Type-safe database queries                |
-| Container | Docker + Compose         | -       | Containerization and orchestration        |
-| Auth      | JWT                      | -       | Stateless authentication                  |
-| Storage   | Cloudinary               | -       | Video/image CDN                           |
-| Security  | CORS + HTTP-only Cookies | -       | Origin control and token protection       |
+| Layer         | Technology               | Version | Purpose                                   |
+| ------------- | ------------------------ | ------- | ----------------------------------------- |
+| Runtime       | Node.js                  | v18+    | Server execution environment              |
+| Language      | TypeScript               | v5.9.3  | Type safety, compile-time error detection |
+| Framework     | Express.js               | v5.1.0  | HTTP request handling, middleware         |
+| Database      | PostgreSQL               | v14+    | Relational data storage                   |
+| ORM           | Prisma                   | v7.2.0  | Type-safe database queries                |
+| Container     | Docker + Compose         | -       | Containerization and orchestration        |
+| Auth          | JWT                      | -       | Stateless authentication                  |
+| Storage       | Cloudinary               | -       | Video/image CDN                           |
+| Security      | CORS + HTTP-only Cookies | -       | Origin control and token protection       |
+| AI Worker     | FastAPI (Python)         | v0.115  | Orchestrates RAG & Transcription          |
+| Transcription | Whisper                  | Latest  | Audio-to-text extraction                  |
+| Vector DB     | ChromaDB                 | Latest  | Semantic document storage                 |
+| LLM           | OpenRouter/GPT           | Latest  | Answer generation                         |
+
+---
+
+## AI Features (v2.1)
+
+### 1. Ingestion Endpoint (`/api/rag/ingest`)
+
+Orchestrates the asynchronous background task of video processing.
+
+- **Input:** `video_id`, `file`
+- **Logic:** Transcribes audio via Whisper, chunks text, and builds vector embeddings stored in ChromaDB.
+- **Status:** Background task with automatic temporary file cleanup.
+
+### 2. QA Endpoint (`/api/rag/ask`)
+
+Retrieves context-aware answers from video transcripts.
+
+- **Input:** `video_id`, `question`
+- **Logic:** Performs similarity search in ChromaDB, sends top chunks to LLM via OpenRouter.
+- **Output:** JSON object containing `answer` (string) and `sources` (array of relevant text segments).
 
 ---
 
@@ -195,7 +236,14 @@ DELETE /videos/:videoId         - Remove video + Cloudinary assets (owner only)
 PATCH  /videos/toggle/publish/:videoId - Toggle isPublished flag
 ```
 
-**3. Social Interactions (11 endpoints)**
+**3. AI / RAG (2 endpoints)**
+
+```
+POST   /api/rag/ingest          - Transcribe & index video content
+POST   /api/rag/ask             - Query video content via natural language
+```
+
+**4. Social Interactions (11 endpoints)**
 
 ```
 # Comments
@@ -216,19 +264,19 @@ GET    /subscriptions/c/:channelId - Get channel subscribers
 GET    /subscriptions/u/:subscriberId - Get user's subscriptions
 ```
 
-**4. Content Organization (7 endpoints)**
+**5. Content Organization (7 endpoints)**
 
 ```
 POST   /playlist                - Create playlist
 GET    /playlist/user/:userId   - List user playlists
-GET    /playlist/:playlistId    - Get playlist with videos
+GET    /playlist/:playgroundId    - Get playlist with videos
 PATCH  /playlist/:playlistId    - Update name/description (owner only)
 DELETE /playlist/:playlistId    - Delete playlist (owner only)
 POST   /playlist/:playlistId/:videoId - Add video to playlist
 DELETE /playlist/:playlistId/:videoId - Remove video from playlist
 ```
 
-**5. Community Posts (4 endpoints)**
+**6. Community Posts (4 endpoints)**
 
 ```
 POST   /tweets                  - Create post
@@ -237,14 +285,14 @@ PATCH  /tweets/:tweetId         - Edit post (owner only)
 DELETE /tweets/:tweetId         - Delete post (owner only)
 ```
 
-**6. Analytics (2 endpoints)**
+**7. Analytics (2 endpoints)**
 
 ```
 GET    /dashboard/stats         - Channel statistics (videos, views, subscribers, likes)
 GET    /dashboard/videos        - User's uploaded videos with metrics
 ```
 
-**7. Health Check (1 endpoint)**
+**8. Health Check (1 endpoint)**
 
 ```
 GET    /healthcheck             - Server status (no auth required)
@@ -369,6 +417,7 @@ Web Server: Nginx (reverse proxy, ports 80/443 → Docker)
 Services:
   - api: Node.js API container (production)
   - db: PostgreSQL container (local development via docker-compose.dev.yml)
+  - ai-worker: FastAPI Python container (RAG pipeline)
 ```
 
 **Database Configuration:**
@@ -379,13 +428,13 @@ Services:
 
 ---
 
-## 🚀 Deployment & DevOps
+## Deployment & DevOps
 
 **Production:** Hosted on AWS EC2 (t3.micro - 1GB RAM) with Nginx reverse proxy.
 
 **CI/CD:** Automated pipeline via GitHub Actions. Pushes to main trigger a Docker build and automated deployment (brief downtime during container restart).
 
-**Containerization:** Fully Dockerized application (Node.js API + PostgreSQL) running in isolated containers.
+**Containerization:** Fully Dockerized application (Node.js API + PostgreSQL + FastAPI AI Worker) running in isolated containers.
 
 **Database:** PostgreSQL connected through `DATABASE_URL` (Dockerized locally in development).
 
@@ -400,7 +449,9 @@ Services:
 ```bash
 Node.js v18+
 PostgreSQL v14+
+Python 3.10+
 Cloudinary account
+OpenRouter API key
 ```
 
 ### Local Development Setup
@@ -429,6 +480,11 @@ npm run build
 
 # Start development server
 npm run dev
+
+# Start AI worker (separate terminal)
+cd ai-worker
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
 ### CI/CD Pipeline
@@ -475,6 +531,11 @@ REFRESH_TOKEN_EXPIRY=7d
 CLOUDINARY_CLOUD_NAME=<cloud-name>
 CLOUDINARY_API_KEY=<api-key>
 CLOUDINARY_API_SECRET=<api-secret>
+
+# AI / RAG
+OPENROUTER_API_KEY=<openrouter-api-key>
+CHROMA_DB_PATH=./chroma_db
+WHISPER_MODEL=base
 ```
 
 ### Verification
@@ -489,6 +550,18 @@ curl http://localhost:8000/api/v2/healthcheck
   "data": { "status": "OK", "message": "Server is running" },
   "success": true
 }
+
+# RAG ingest
+curl -X POST http://localhost:8000/api/rag/ingest \
+  -H "Authorization: Bearer <access-token>" \
+  -F "video_id=123" \
+  -F "file=@video.mp4"
+
+# RAG ask
+curl -X POST http://localhost:8000/api/rag/ask \
+  -H "Authorization: Bearer <access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "123", "question": "What is discussed at the 5 minute mark?"}'
 ```
 
 ---
@@ -544,6 +617,12 @@ viztube/
 │   ├── middlewares/            # Auth, file upload, error handling
 │   ├── utils/                  # ApiResponse, ApiError, Cloudinary helpers
 │   └── validators/             # Input validation schemas
+├── ai-worker/                  # FastAPI Python microservice
+│   ├── main.py                 # FastAPI app entry point
+│   ├── transcriber.py          # Whisper transcription logic
+│   ├── embedder.py             # ChromaDB vector storage
+│   ├── qa.py                   # RAG query pipeline
+│   └── requirements.txt        # Python dependencies
 ├── public/temp/                # Temporary upload storage
 ├── docker-compose.yml          # Docker orchestration
 ├── Dockerfile                  # Container image definition
@@ -561,6 +640,7 @@ viztube/
 3. **Basic Pagination:** Offset-based (no cursor pagination)
 4. **No Full-Text Search:** Title/description search unavailable
 5. **No Email Verification:** Users can register without confirmation
+6. **RAG Latency:** Whisper transcription is synchronous on smaller instances
 
 ### Planned Enhancements (v3.0)
 
@@ -570,6 +650,8 @@ viztube/
 - Video transcoding pipeline (HLS adaptive streaming)
 - Live streaming (RTMP → HLS)
 - Content moderation tools
+- Async RAG ingestion queue (Celery + Redis)
+- Multi-video RAG search across a user's entire library
 
 ---
 
@@ -587,6 +669,18 @@ viztube/
 - **Portability:** Same container runs locally and in production
 - **Easy Rollback:** Previous image versions available for instant rollback
 - **Simplified Deployment:** Docker Compose orchestrates multi-container setup
+
+### Why FastAPI for the AI Worker?
+
+- **Python Ecosystem:** Whisper, ChromaDB, and LangChain are Python-native
+- **Async Support:** FastAPI handles concurrent transcription requests efficiently
+- **Decoupled Architecture:** AI worker can be scaled or replaced independently of the Node.js API
+
+### Why ChromaDB over Pinecone/Weaviate?
+
+- **Self-hosted:** No external API dependency, data stays on-instance
+- **Simple Setup:** Minimal configuration, runs inside Docker
+- **Trade-off:** No managed scaling, but sufficient for MVP workloads
 
 ### Why Certbot/Let's Encrypt SSL?
 
@@ -659,5 +753,3 @@ Repository: [VizTube](https://github.com/Nishant-444/Viztube)
 
 - **[PRD](./docs/PRD.md)** - Product requirements, system architecture, feature specifications
 - **[Postman Collection](./docs/viztube.postman_collection.json)** - API testing collection
-
----
