@@ -697,23 +697,6 @@ viztube/
 
 ---
 
-## Monitoring & Observability
-
-### Monitoring
-
-- **Docker Stats:** Real-time container resource metrics (CPU, memory, network).
-- **AWS CloudWatch:** Automated CPU & Network I/O tracking.
-- **Health Check:** `/healthcheck` endpoint for uptime verification.
-
-### Key Metrics Tracked
-
-- Docker container health (CPU, memory, restart count)
-- AWS CloudWatch infrastructure metrics (network I/O, disk usage)
-- Application logs (Docker logs for API and PostgreSQL)
-- Database connection pool status (Prisma metrics)
-
----
-
 ## Contributing
 
 Contributions welcome. Follow standard Git workflow:
