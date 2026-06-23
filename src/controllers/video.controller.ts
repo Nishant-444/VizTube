@@ -49,8 +49,9 @@ const removeLocalFile = (localPath: string) => {
 // exported functions
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  const userId = (req as any).user?.id;
-
+  const userId = req.user?.id;
+  
+  if (!userId) throw new ApiError(401, 'Unauthorized');
   if (!title) throw new ApiError(400, 'Title is required');
 
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -117,10 +118,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
     throw new ApiError(500, error?.message || 'Error publishing video');
   } finally {
-    // const filesToClean = [videoLocalPath, thumbnailLocalPath];
-    // filesToClean.forEach((filePath) => {
-    //   if (filePath) removeLocalFile(filePath);
-    // });
     if (thumbnailLocalPath) {
       removeLocalFile(thumbnailLocalPath);
       console.log(`[Gateway Janitor] Cleared thumbnail: ${thumbnailLocalPath}`);
