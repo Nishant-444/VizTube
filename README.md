@@ -60,8 +60,8 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 
 **AI Processing Flow:**
 
-1. **Ingestion:** API receives video file → Extracts audio → Transcribes via Whisper → Chunks text → Embeds & stores in ChromaDB.
-2. **Querying:** User submits question → Search query in ChromaDB → Retrieve relevant transcript chunks → LLM (OpenRouter) generates answer with citations.
+1. **Ingestion:** API receives video file → Extracts audio → Transcribes via Whisper → Chunks text → Embeds & stores in pgvector.
+2. **Querying:** User submits question → Search query in pgvector → Retrieve relevant transcript chunks → LLM (OpenRouter) generates answer with citations.
 
 **Key Infrastructure Decisions:**
 
