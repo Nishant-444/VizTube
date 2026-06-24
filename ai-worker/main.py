@@ -56,7 +56,7 @@ def ingest_video_file(video_id: str = Form(...), file: UploadFile = File(...)):
 @app.post("/api/rag/ask")
 def ask_video_question(request: QueryRequest) -> RagResponse:
     """
-    Uses ChromaDB to retrieve context and OpenRouter LLM to generate an answer.
+    Uses pgvector (PostgreSQL vector search) to retrieve context and OpenRouter LLM to generate an answer.
     """
     try:
         return get_answer(
