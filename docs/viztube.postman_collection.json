@@ -20,9 +20,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/healthcheck/",
+              "raw": "{{baseUrl}}/healthcheck",
               "host": ["{{baseUrl}}"],
-              "path": ["healthcheck", ""]
+              "path": ["healthcheck"]
             },
             "description": "Check if the server is running"
           },
@@ -1191,6 +1191,50 @@
               ]
             },
             "description": "Remove a video from a playlist"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Ask Video Question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  if (jsonData.data) {",
+                  "    pm.collectionVariables.set('lastAIAnswer', JSON.stringify(jsonData.data));",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{videoId}}\",\n  \"question\": \"What is this video about?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "query"]
+            },
+            "description": "Ask an AI question about a video's transcript. Requires Authorization (Bearer token)."
           },
           "response": []
         }
