@@ -17,7 +17,7 @@
     "dev": "tsx watch --ignore \"public/**\" src/index.ts",
     "start": "node dist/index.js",
     "dev:backend": "pnpm run dev",
-    "dev:ai": "cd ai-worker && uvicorn main:app --reload --port 8000",
+    "dev:ai": "cd ai-worker && .venv/bin/uvicorn main:app --reload --port 8000",
     "dev:all": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:ai\""
   },
   "devDependencies": {
@@ -31,6 +31,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.3",
     "@types/pg": "^8.16.0",
+    "concurrently": "^10.0.4",
     "eslint": "^9.39.0",
     "prettier": "^3.6.2",
     "prisma": "^7.2.0",
@@ -52,13 +53,5 @@
     "multer": "^2.0.2",
     "pg": "^8.16.3"
   },
-  "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "bcrypt",
-      "esbuild",
-      "prisma"
-    ]
-  }
+  "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916"
 }
