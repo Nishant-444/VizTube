@@ -22,10 +22,8 @@ if not DATABASE_URL:
 if not OPENROUTER_API_KEY:
     raise ValueError("OPENROUTER_API_KEY is not set in .env")
 
-# 1. Initialize the embedding model
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-# 2. Initialize the LLM
 llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=SecretStr(OPENROUTER_API_KEY),
@@ -67,10 +65,10 @@ def ingest_video(video_id: str, transcript: str) -> int:
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(transcript)
 
-    # Calculate mathematical vectors for all transcript chunks
+    # calculate mathematical vectors for all transcript chunks
     vectors = embeddings.embed_documents(chunks)
 
-    # Insert directly into the Prisma-generated table
+    # insert directly into the prisma generated table
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             for chunk, vector in zip(chunks, vectors):
@@ -91,10 +89,10 @@ def get_answer(
 ) -> RagResponse:
     """Retrieves context using pure SQL Vector Search and generates an answer."""
 
-    # 1. Convert the user's question into a math vector
+    # convert user's question into a math vector
     question_vector = embeddings.embed_query(question)
 
-    # 2. Vector Search via Postgres Cosine Distance (<=>) with explicit vector type-casting
+    # vector search via postgres cosine distance  with explicit vector type-casting
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -110,7 +108,7 @@ def get_answer(
             results = cur.fetchall()
             context_chunks = [row[0] for row in results]
 
-    # 3. Format context and prompt the LLM
+    # format context and prompt the LLM
     context = "\n\n".join(context_chunks)
 
     messages = [

@@ -46,7 +46,7 @@ export const triggerBackgroundIngestion = async (
     });
 
     console.log(
-      `✅ Background AI ingestion completed and DB updated for video: ${videoId}`
+      `Background AI ingestion completed and DB updated for video: ${videoId}`
     );
   } catch (error: any) {
     if (error instanceof AggregateError) {
