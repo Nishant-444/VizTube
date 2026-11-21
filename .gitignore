@@ -7,7 +7,7 @@
 /src/generated/
 *.db
 *.db-journal
-# /public/temp/*
+/public/temp/*
 
 # Python
 .venv/

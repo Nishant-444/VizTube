@@ -6,7 +6,7 @@ dotenv.config({
   path: './.env',
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 // console.log('port:', process.env.PORT);
 try {
   await prisma.$connect();

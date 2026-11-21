@@ -1,0 +1,35 @@
+[project]
+name = "viztube-ai-worker"
+version = "2.0.0"
+description = "FastAPI service for VizTube transcription and RAG queries"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.136.3",
+    "uvicorn==0.49.0",
+    "pydantic==2.13.4",
+    "langchain-core==1.4.7",
+    "langchain-openai==1.3.2",
+    "langchain-huggingface==1.2.2",
+    "langchain-text-splitters==1.1.2",
+    "psycopg[binary]==3.3.4",
+    "pgvector==0.4.2",
+    "python-dotenv==1.2.2",
+    "python-multipart==0.0.32",
+    "sentence-transformers==3.4.1",
+    "groq==1.4.0",
+    "torch==2.12.0",
+]
+
+# Not a distributable package, just an app: uv only manages its environment.
+[tool.uv]
+package = false
+
+# CPU-only torch keeps the image and local venv small (no CUDA wheels).
+# macOS has no CUDA builds, so it uses the regular PyPI wheels.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

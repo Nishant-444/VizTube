@@ -17,7 +17,7 @@
     "dev": "tsx watch --ignore \"public/**\" src/index.ts",
     "start": "node dist/index.js",
     "dev:backend": "pnpm run dev",
-    "dev:ai": "cd ai-worker && .venv/bin/uvicorn main:app --reload --port 8000",
+    "dev:ai": "uv run --directory ai-worker uvicorn main:app --reload --port 8000",
     "dev:all": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:ai\""
   },
   "devDependencies": {

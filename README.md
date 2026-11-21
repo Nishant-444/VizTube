@@ -478,10 +478,12 @@ npm run build
 # Start development server
 npm run dev
 
-# Start AI worker (separate terminal)
-cd ai-worker
-pip install -r requirements.txt
-uvicorn main:app --reload
+# Start AI worker (separate terminal; requires uv: https://docs.astral.sh/uv/)
+# uv creates ai-worker/.venv and installs dependencies automatically on first run
+pnpm run dev:ai
+
+# Or run backend + AI worker together
+pnpm run dev:all
 ```
 
 ### CI/CD Pipeline
@@ -625,7 +627,8 @@ viztube/
 │   ├── main.py                 # FastAPI app entry point
 │   ├── transcriber.py          # Whisper integration (via Groq API)
 │   ├── rag.py                  # RAG query and chunking pipeline (via pgvector)
-│   └── requirements.txt        # Python dependencies
+│   ├── pyproject.toml          # Python dependencies (managed by uv)
+│   └── uv.lock                 # Locked dependency versions
 ├── public/temp/                # Temporary upload storage
 ├── docker-compose.yml          # Docker orchestration
 ├── Dockerfile                  # Container image definition

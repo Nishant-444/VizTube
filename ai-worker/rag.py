@@ -13,7 +13,8 @@ from pydantic import SecretStr
 
 load_dotenv(override=True)
 
-MODEL = "openai/gpt-oss-20b:free"
+# free OpenRouter models get retired without notice, so keep this overridable
+MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-4-31b-it:free")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 

@@ -39,19 +39,15 @@
             {
               "listen": "test",
               "script": {
-                "exec": [""],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set('userId', jsonData.data.id);",
+                  "    }",
+                  "}"
+                ]
               }
             }
           ],
@@ -111,19 +107,17 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.data && jsonData.data.accessToken) {",
                   "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
                   "        pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
-                  "        pm.collectionVariables.set('userId', jsonData.data.user._id);",
+                  "        pm.collectionVariables.set('userId', jsonData.data.user.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                ]
               }
             }
           ],
@@ -157,19 +151,17 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.data && jsonData.data.accessToken) {",
                   "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
                   "        pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
-                  "        pm.collectionVariables.set('userId', jsonData.data.user._id);",
+                  "        pm.collectionVariables.set('userId', jsonData.data.user.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                ]
               }
             }
           ],
@@ -200,9 +192,6 @@
         {
           "name": "Logout User",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
             "method": "POST",
             "header": [],
             "url": {
@@ -410,29 +399,21 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data._id) {",
-                  "        pm.collectionVariables.set('videoId', jsonData.data._id);",
+                  "    if (jsonData.data && jsonData.data.video) {",
+                  "        pm.collectionVariables.set('videoId', jsonData.data.video.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -463,7 +444,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["videos"]
             },
-            "description": "Upload and publish a new video"
+            "description": "Upload and publish a new video. AI transcript ingestion starts in the background; the video is ready for AI queries once its processingStatus is COMPLETED."
           },
           "response": []
         },
@@ -611,29 +592,6 @@
             "description": "Toggle video publish status (owner only)"
           },
           "response": []
-        },
-        {
-          "name": "Ingest Test",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "videoFile",
-                  "type": "file",
-                  "src": "sample_audio.mp3"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/videos/ingest-test",
-              "host": ["{{baseUrl}}"],
-              "path": ["videos", "ingest-test"]
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -646,13 +604,23 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/comments/:videoId",
+              "raw": "{{baseUrl}}/comments/:videoId?page=1&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["comments", ":videoId"],
               "variable": [
                 {
                   "key": "videoId",
                   "value": "{{videoId}}"
+                }
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
                 }
               ]
             },
@@ -666,15 +634,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data._id) {",
-                  "        pm.collectionVariables.set('commentId', jsonData.data._id);",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set('commentId', jsonData.data.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -765,17 +733,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data._id) {",
-                  "        pm.collectionVariables.set('tweetId', jsonData.data._id);",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set('tweetId', jsonData.data.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                ]
               }
             }
           ],
@@ -1024,15 +990,15 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data._id) {",
-                  "        pm.collectionVariables.set('playlistId', jsonData.data._id);",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set('playlistId', jsonData.data.id);",
                   "    }",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -1197,7 +1163,7 @@
       ]
     },
     {
-      "name": "AI",
+      "name": "AI (RAG)",
       "item": [
         {
           "name": "Ask Video Question",
@@ -1230,11 +1196,11 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/ai/query",
+              "raw": "{{baseUrl}}/rag/query",
               "host": ["{{baseUrl}}"],
-              "path": ["ai", "query"]
+              "path": ["rag", "query"]
             },
-            "description": "Ask an AI question about a video's transcript. Requires Authorization (Bearer token)."
+            "description": "Ask an AI question about a video's transcript. The video must have processingStatus COMPLETED, a transcript, and allowPublicQnA enabled. Requires Authorization (Bearer token)."
           },
           "response": []
         }
@@ -1263,9 +1229,19 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/dashboard/videos",
+              "raw": "{{baseUrl}}/dashboard/videos?page=1&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "videos"]
+              "path": ["dashboard", "videos"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
             },
             "description": "Get all videos uploaded by the current user with statistics"
           },
@@ -1287,7 +1263,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api/v1"
+      "value": "http://localhost:3000/api/v2"
     },
     {
       "key": "accessToken",
@@ -1319,6 +1295,10 @@
     },
     {
       "key": "uniqueSuffix",
+      "value": ""
+    },
+    {
+      "key": "lastAIAnswer",
       "value": ""
     }
   ]
