@@ -140,6 +140,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     include: {
       user: {
         select: {
+          id: true,
           fullname: true,
           username: true,
           avatar: true,
@@ -148,6 +149,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           },
         },
       },
+      _count: { select: { likes: true, comments: true } },
     },
   });
 
@@ -174,13 +176,38 @@ const getVideoById = asyncHandler(async (req, res) => {
     });
   }
 
-  const { _count, ...restOfUser } = video.user;
+  // viewer-specific state for the like and subscribe buttons
+  const viewerId = req.user?.id;
+  const [like, subscription] = viewerId
+    ? await Promise.all([
+        prisma.like.findUnique({
+          where: { userId_videoId: { userId: viewerId, videoId } },
+          select: { id: true },
+        }),
+        prisma.subscription.findUnique({
+          where: {
+            subscriberId_channelId: {
+              subscriberId: viewerId,
+              channelId: video.userId,
+            },
+          },
+          select: { id: true },
+        }),
+      ])
+    : [null, null];
+
+  const { _count: userCount, ...restOfUser } = video.user;
+  const { _count: videoCount, ...videoData } = video;
 
   const responseData = {
-    ...video,
+    ...videoData,
+    likesCount: videoCount.likes,
+    commentsCount: videoCount.comments,
+    isLiked: !!like,
     user: {
       ...restOfUser,
-      subscribersCount: _count.subscribers,
+      subscribersCount: userCount.subscribers,
+      isSubscribed: !!subscription,
     },
   };
 
