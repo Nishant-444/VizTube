@@ -563,9 +563,18 @@ curl -X POST http://localhost:3000/api/v2/rag/query \
   -d '{"video_id": "your-video-uuid-here", "question": "What is discussed at the 5 minute mark?"}'
 
 # RAG ingest (Internal Route to Python AI Worker - triggered automatically by Node.js, not by client)
+# (queued by the API after upload; the worker downloads the audio itself)
 curl -X POST http://localhost:8000/api/rag/ingest \
-  -F "video_id=your-video-uuid-here" \
-  -F "file=@audio.mp4"
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "your-video-uuid-here", "audio_url": "https://res.cloudinary.com/<cloud>/video/upload/af_16000,br_32k/<public_id>.mp3"}'
+
+# Check AI processing status (poll while PROCESSING)
+curl http://localhost:3000/api/v2/videos/<video-id>/status \
+  -H "Authorization: Bearer <access-token>"
+
+# Retry AI processing for a FAILED video (owner only)
+curl -X POST http://localhost:3000/api/v2/videos/<video-id>/reprocess \
+  -H "Authorization: Bearer <access-token>"
 ```
 
 ---

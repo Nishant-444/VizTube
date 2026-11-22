@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-import { askAiAboutVideo } from '../services/ai.service.js';
+import { ask } from '../services/ai.service.js';
 import { prisma } from '../lib/prisma.js';
 
 export const askVideoQuestion = asyncHandler(
@@ -45,17 +45,11 @@ export const askVideoQuestion = asyncHandler(
       throw new ApiError(403, 'Q&A is not enabled for this video');
     }
 
-    try {
-      const answerData = await askAiAboutVideo(video_id, question, videoMeta);
+    // worker failures surface as ApiError(502) from the service
+    const answerData = await ask(video_id, question, videoMeta);
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, answerData, 'AI generated an answer'));
-    } catch (error: any) {
-      throw new ApiError(
-        500,
-        error?.message || 'Failed to retrieve answer from AI Worker'
-      );
-    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, answerData, 'AI generated an answer'));
   }
 );

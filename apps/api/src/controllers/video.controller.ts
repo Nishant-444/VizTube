@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { getSingleParam } from '../utils/normalize.js';
 import { ProcessingStatus } from '../generated/client/enums.js';
-import { triggerBackgroundIngestion } from '../utils/aiPipeline.js';
+import { enqueueIngest } from '../jobs/ingest.job.js';
 
 const projectTempDir = path.resolve(process.cwd(), 'public', 'temp');
 const containerTempDir = path.resolve('/app', 'public', 'temp');
@@ -93,20 +93,23 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     videoRecordId = videoRecord.id;
 
-    const aiResponse = triggerBackgroundIngestion(
-      videoRecord.id,
-      videoLocalPath
-    ).catch((err) => console.error('Background AI trigger failed: ', err));
+    // the job pulls the audio from Cloudinary, so the local file isn't needed after this
+    let video = videoRecord;
+    let message = 'Video published successfully. AI processing has been queued.';
+    try {
+      await enqueueIngest(videoRecord.id);
+    } catch (err) {
+      // the video itself is published; the owner can retry AI processing later
+      console.error('Failed to queue AI ingestion:', err);
+      video = await prisma.video.update({
+        where: { id: videoRecord.id },
+        data: { processingStatus: ProcessingStatus.FAILED },
+      });
+      message =
+        'Video published, but AI processing could not be queued. Use reprocess to retry.';
+    }
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          video: videoRecord,
-        },
-        'Video published successfully. AI ingestion started in the background.'
-      )
-    );
+    return res.status(200).json(new ApiResponse(200, { video }, message));
   } catch (error: any) {
     if (videoRecordId) {
       await prisma.video
@@ -118,10 +121,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
     throw new ApiError(500, error?.message || 'Error publishing video');
   } finally {
-    if (thumbnailLocalPath) {
-      removeLocalFile(thumbnailLocalPath);
-      console.log(`[Gateway Janitor] Cleared thumbnail: ${thumbnailLocalPath}`);
-    }
+    removeLocalFile(videoLocalPath);
+    removeLocalFile(thumbnailLocalPath);
   }
 });
 
@@ -373,7 +374,87 @@ const getAllVideos = asyncHandler(async (req, res) => {
   );
 });
 
-// 6 exports
+// AI processing state, polled by the UI while a video is PROCESSING
+const getVideoStatus = asyncHandler(async (req, res) => {
+  const videoId = getSingleParam(req.params.videoId);
+  if (!videoId) throw new ApiError(400, 'Invalid or missing video ID');
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: {
+      id: true,
+      userId: true,
+      isPublished: true,
+      processingStatus: true,
+      hasTranscript: true,
+      allowPublicQnA: true,
+    },
+  });
+
+  // unpublished videos are only visible to their owner
+  if (!video || (!video.isPublished && video.userId !== req.user?.id)) {
+    throw new ApiError(404, 'Video not found');
+  }
+
+  const { userId, isPublished, ...status } = video;
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, status, 'Video status fetched successfully'));
+});
+
+// owner-only: queue AI processing again for a video that failed
+const reprocessVideo = asyncHandler(async (req, res) => {
+  const videoId = getSingleParam(req.params.videoId);
+  if (!videoId) throw new ApiError(400, 'Invalid or missing video ID');
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: { userId: true, processingStatus: true },
+  });
+
+  if (!video) throw new ApiError(404, 'Video not found');
+  if (video.userId !== req.user.id) {
+    throw new ApiError(403, 'You are not authorized to reprocess this video');
+  }
+  if (video.processingStatus !== ProcessingStatus.FAILED) {
+    throw new ApiError(
+      409,
+      `Only failed videos can be reprocessed. Current status: ${video.processingStatus}`
+    );
+  }
+
+  const updated = await prisma.video.update({
+    where: { id: videoId },
+    data: {
+      processingStatus: ProcessingStatus.PROCESSING,
+      hasTranscript: false,
+      allowPublicQnA: false,
+    },
+    select: {
+      id: true,
+      processingStatus: true,
+      hasTranscript: true,
+      allowPublicQnA: true,
+    },
+  });
+
+  try {
+    await enqueueIngest(videoId);
+  } catch (error) {
+    await prisma.video.update({
+      where: { id: videoId },
+      data: { processingStatus: ProcessingStatus.FAILED },
+    });
+    throw new ApiError(503, 'Could not queue AI processing, try again later');
+  }
+
+  return res
+    .status(202)
+    .json(new ApiResponse(202, updated, 'AI processing has been queued'));
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -381,4 +462,6 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getVideoStatus,
+  reprocessVideo,
 };

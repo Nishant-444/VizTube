@@ -61,17 +61,22 @@ class RagResponse(TypedDict):
 
 
 def ingest_video(video_id: str, transcript: str) -> int:
-    """Chunks a transcript, converts to vectors, and saves directly to Neon Postgres."""
+    """Chunks a transcript, converts to vectors, and saves directly to Neon Postgres.
+
+    Idempotent: a video's existing chunks are replaced, so retries and
+    reprocessing never leave duplicates behind.
+    """
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(transcript)
 
     # calculate mathematical vectors for all transcript chunks
-    vectors = embeddings.embed_documents(chunks)
+    vectors = embeddings.embed_documents(chunks) if chunks else []
 
-    # insert directly into the prisma generated table
+    # replace the video's chunks in one transaction
     with get_db_connection() as conn:
         with conn.cursor() as cur:
+            cur.execute('DELETE FROM "DocumentChunk" WHERE "videoId" = %s', (video_id,))
             for chunk, vector in zip(chunks, vectors):
                 cur.execute(
                     """

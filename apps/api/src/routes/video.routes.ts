@@ -24,6 +24,9 @@ router
   .delete(videoController.deleteVideo)
   .patch(upload.single('thumbnail'), videoController.updateVideo);
 
+router.route('/:videoId/status').get(videoController.getVideoStatus);
+router.route('/:videoId/reprocess').post(videoController.reprocessVideo);
+
 router
   .route('/toggle/publish/:videoId')
   .patch(videoController.togglePublishStatus);

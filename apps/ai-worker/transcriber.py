@@ -1,44 +1,44 @@
 import logging
 import os
+
 from groq import Groq
-from fastapi import HTTPException, UploadFile
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+logger = logging.getLogger(__name__)
+
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+# Groq's Whisper endpoint rejects uploads above 25 MB
+MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
-def extract_transcript(file: UploadFile) -> str:
-    """
-    stream the uploaded binary file directly to Groq's API and returns the raw text transcript
-    """
 
-    # 25mb cap
-    if file.size and file.size > 25 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File too large")
+class AudioTooLargeError(ValueError):
+    pass
 
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
+
+def extract_transcript(filename: str, audio: bytes) -> str:
+    """Send the audio bytes to Groq Whisper and return the plain-text transcript."""
+
+    if len(audio) > MAX_AUDIO_BYTES:
+        raise AudioTooLargeError(
+            f"Audio is {len(audio) / 1024 / 1024:.1f} MB; the transcription limit is 25 MB"
+        )
+
+    logger.info("Starting transcription for %s (%d bytes)", filename, len(audio))
 
     try:
-        # read file bytes
-        file_bytes = file.file.read()
-        logger.info(f"Starting transcription for {file.filename}")
-
-        # pass the mem stream directly to sdk without using disk
         completion = client.audio.transcriptions.create(
             model="whisper-large-v3",
-            file=(file.filename or "audio.mp4", file_bytes),
+            file=(filename, audio),
             response_format="text",
         )
-        if isinstance(completion, str):
-            return completion
-
-        # If it is the object, extract the text
-        return completion.text  # The SDK returns a string when response_format="text"
     except Exception as e:
-        logger.error(f"Transcription failed: {str(e)}")
-        raise RuntimeError(f"Transcription engine failed: {str(e)}")
-    finally:
-        file.file.close()
+        logger.error("Transcription failed: %s", e)
+        raise RuntimeError(f"Transcription engine failed: {e}") from e
+
+    # the SDK returns a plain string when response_format="text"
+    if isinstance(completion, str):
+        return completion
+    return completion.text
