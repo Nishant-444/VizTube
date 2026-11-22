@@ -318,6 +318,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!channel) throw new ApiError(404, 'Channel not found');
 
   const { _count, ...userData } = channel;
+  // public route: only the channel owner sees their own email
+  const { email, ...publicData } = getSafeUser(userData);
+  const isOwner = currentUserId === channel.id;
 
   let isSubscribed: boolean = false;
   if (currentUserId) {
@@ -333,7 +336,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   }
 
   const responseData = {
-    ...getSafeUser(userData),
+    ...publicData,
+    ...(isOwner ? { email } : {}),
     subscriberCount: _count.subscribers,
     channelsSubscribedToCount: _count.subscriptions,
     isSubscribed,

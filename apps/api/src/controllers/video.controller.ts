@@ -9,6 +9,9 @@ import { CloudinaryResponse } from '../types/cloudinary.types.js';
 import { prisma } from '../lib/prisma.js';
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
+import { Request } from 'express';
+import { Prisma } from '../generated/client/client.js';
 import { getSingleParam } from '../utils/normalize.js';
 import { ProcessingStatus } from '../generated/client/enums.js';
 import { enqueueIngest } from '../jobs/ingest.job.js';
@@ -126,10 +129,32 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 });
 
+// public; views are counted separately by recordView
 const getVideoById = asyncHandler(async (req, res) => {
   const videoId = getSingleParam(req.params.videoId);
 
   if (!videoId) throw new ApiError(400, 'Invalid video ID');
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    include: {
+      user: {
+        select: {
+          fullname: true,
+          username: true,
+          avatar: true,
+          _count: {
+            select: { subscribers: true },
+          },
+        },
+      },
+    },
+  });
+
+  // unpublished videos are only visible to their owner
+  if (!video || (!video.isPublished && video.userId !== req.user?.id)) {
+    throw new ApiError(404, 'Video not found');
+  }
 
   if (req.user?.id) {
     await prisma.watchHistory.upsert({
@@ -149,29 +174,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     });
   }
 
-  const video = await prisma.video.update({
-    where: { id: videoId },
-    data: {
-      views: { increment: 1 },
-    },
-    include: {
-      user: {
-        select: {
-          fullname: true,
-          username: true,
-          avatar: true,
-          _count: {
-            select: { subscribers: true },
-          },
-        },
-      },
-    },
-  });
-
-  if (!video) {
-    throw new ApiError(404, 'Video not found');
-  }
-
   const { _count, ...restOfUser } = video.user;
 
   const responseData = {
@@ -185,6 +187,109 @@ const getVideoById = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, responseData, 'Video fetched successfully'));
+});
+
+// identifies a viewer for view de-duplication without storing raw IPs
+const getViewerKey = (req: Request) => {
+  if (req.user?.id) return `user:${req.user.id}`;
+  const fingerprint = `${req.ip ?? ''}|${req.get('user-agent') ?? ''}`;
+  return `anon:${createHash('sha256').update(fingerprint).digest('hex')}`;
+};
+
+// called by the player after ~10s of playback; counts once per viewer per day
+const recordView = asyncHandler(async (req, res) => {
+  const videoId = getSingleParam(req.params.videoId);
+  if (!videoId) throw new ApiError(400, 'Invalid video ID');
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: { userId: true, isPublished: true },
+  });
+  if (!video || (!video.isPublished && video.userId !== req.user?.id)) {
+    throw new ApiError(404, 'Video not found');
+  }
+
+  const now = new Date();
+  const day = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+
+  const result = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.videoView.createMany({
+      data: [{ videoId, viewerKey: getViewerKey(req), day }],
+      skipDuplicates: true,
+    });
+
+    const updated = count
+      ? await tx.video.update({
+          where: { id: videoId },
+          data: { views: { increment: 1 } },
+          select: { views: true },
+        })
+      : await tx.video.findUniqueOrThrow({
+          where: { id: videoId },
+          select: { views: true },
+        });
+
+    return { counted: count > 0, views: updated.views };
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        result,
+        result.counted ? 'View recorded' : 'View already counted today'
+      )
+    );
+});
+
+// newest videos from channels the user subscribes to, cursor-paginated
+const getSubscriptionFeed = asyncHandler(async (req, res) => {
+  if (!req.user?.id) throw new ApiError(401, 'Unauthorized');
+
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50);
+  const cursor = getSingleParam(req.query.cursor as string | undefined);
+
+  const subscriptions = await prisma.subscription.findMany({
+    where: { subscriberId: req.user.id },
+    select: { channelId: true },
+  });
+  const channelIds = subscriptions.map((s) => s.channelId);
+
+  if (!channelIds.length) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { items: [], nextCursor: null }, 'Feed fetched')
+      );
+  }
+
+  // fetch one extra row to know whether another page exists
+  const videos = await prisma.video.findMany({
+    where: { userId: { in: channelIds }, isPublished: true },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: {
+      user: { select: { fullname: true, username: true, avatar: true } },
+    },
+  });
+
+  const hasMore = videos.length > limit;
+  const items = hasMore ? videos.slice(0, limit) : videos;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        items,
+        nextCursor: hasMore ? items[items.length - 1].id : null,
+      },
+      'Feed fetched'
+    )
+  );
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -318,43 +423,96 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedVideo, 'Video publish status toggled'));
 });
 
+// safe ORDER BY targets; never interpolate user input into SQL directly
+const SORT_COLUMNS = {
+  createdAt: Prisma.raw('v."createdAt"'),
+  views: Prisma.raw('v."views"'),
+  duration: Prisma.raw('v."duration"'),
+} as const;
+type SortColumn = keyof typeof SORT_COLUMNS;
+
+const isSortColumn = (value: unknown): value is SortColumn =>
+  typeof value === 'string' && value in SORT_COLUMNS;
+
+// must match the expression of the "Video_search_idx" GIN index
+const SEARCH_VECTOR = Prisma.sql`(setweight(to_tsvector('english', v."title"), 'A') || setweight(to_tsvector('english', coalesce(v."description", '')), 'B'))`;
+
+// public; full-text search with `query`, owner sees their own unpublished videos
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { query, sortBy, sortType, userId } = req.query;
+  const query = getSingleParam(req.query.query as string | undefined)?.trim();
+  const userId = getSingleParam(req.query.userId as string | undefined);
+  const sortBy = req.query.sortBy;
+  const direction = req.query.sortType === 'asc' ? 'asc' : 'desc';
 
-  const whereCondition: any = {
-    isPublished: true,
-  };
-
-  if (query) {
-    whereCondition.OR = [
-      { title: { contains: query as string, mode: 'insensitive' } },
-      { description: { contains: query as string, mode: 'insensitive' } },
-    ];
+  if (sortBy !== undefined && sortBy !== 'relevance' && !isSortColumn(sortBy)) {
+    throw new ApiError(
+      400,
+      'sortBy must be one of: relevance, createdAt, views, duration'
+    );
   }
 
-  if (userId) {
-    whereCondition.userId = userId as string;
-  }
-
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 10;
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
   const skip = (page - 1) * limit;
 
-  const videos = await prisma.video.findMany({
-    where: whereCondition,
-    orderBy: {
-      [(sortBy as string) || 'createdAt']: sortType === 'asc' ? 'asc' : 'desc',
-    },
-    skip: skip,
-    take: limit,
-    include: {
-      user: {
-        select: { fullname: true, username: true, avatar: true },
-      },
-    },
-  });
+  const includeUnpublished = !!userId && userId === req.user?.id;
+  const userInclude = {
+    user: { select: { fullname: true, username: true, avatar: true } },
+  };
 
-  const totalDocs = await prisma.video.count({ where: whereCondition });
+  let videos;
+  let totalDocs: number;
+
+  if (query) {
+    const tsQuery = Prisma.sql`websearch_to_tsquery('english', ${query})`;
+    const filters = [Prisma.sql`${SEARCH_VECTOR} @@ ${tsQuery}`];
+    if (!includeUnpublished) filters.push(Prisma.sql`v."isPublished" = true`);
+    if (userId) filters.push(Prisma.sql`v."userId" = ${userId}`);
+    const where = Prisma.join(filters, ' AND ');
+
+    // relevance by default; an explicit sortBy column overrides it
+    const orderBy = isSortColumn(sortBy)
+      ? Prisma.sql`${SORT_COLUMNS[sortBy]} ${Prisma.raw(direction.toUpperCase())}, v."id" DESC`
+      : Prisma.sql`ts_rank(${SEARCH_VECTOR}, ${tsQuery}) DESC, v."createdAt" DESC`;
+
+    const [rows, countRows] = await Promise.all([
+      prisma.$queryRaw<{ id: string }[]>`
+        SELECT v."id" FROM "Video" v
+        WHERE ${where}
+        ORDER BY ${orderBy}
+        LIMIT ${limit} OFFSET ${skip}`,
+      prisma.$queryRaw<{ count: number }[]>`
+        SELECT count(*)::int AS count FROM "Video" v WHERE ${where}`,
+    ]);
+
+    // fetch full records, then restore the ranked order
+    const ids = rows.map((r) => r.id);
+    const found = await prisma.video.findMany({
+      where: { id: { in: ids } },
+      include: userInclude,
+    });
+    const byId = new Map(found.map((v) => [v.id, v]));
+    videos = ids.map((id) => byId.get(id)).filter((v) => v !== undefined);
+    totalDocs = countRows[0]?.count ?? 0;
+  } else {
+    const where: Prisma.VideoWhereInput = {
+      ...(includeUnpublished ? {} : { isPublished: true }),
+      ...(userId ? { userId } : {}),
+    };
+    const column: SortColumn = isSortColumn(sortBy) ? sortBy : 'createdAt';
+
+    [videos, totalDocs] = await Promise.all([
+      prisma.video.findMany({
+        where,
+        orderBy: [{ [column]: direction }, { id: 'desc' }],
+        skip,
+        take: limit,
+        include: userInclude,
+      }),
+      prisma.video.count({ where }),
+    ]);
+  }
+
   const totalPages = Math.ceil(totalDocs / limit);
 
   return res.status(200).json(
@@ -464,4 +622,6 @@ export {
   togglePublishStatus,
   getVideoStatus,
   reprocessVideo,
+  recordView,
+  getSubscriptionFeed,
 };

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as userController from '../controllers/user.controller.js';
 import { upload } from '../middlewares/multer.middleware.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { optionalAuth, verifyJWT } from '../middlewares/auth.middleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // validators
@@ -49,6 +49,15 @@ router
   .route('/refresh-token')
   .post(asyncHandler(userController.refreshAccessToken));
 
+// public channel page; login only adds `isSubscribed`
+router
+  .route('/c/:username')
+  .get(
+    optionalAuth,
+    asyncHandler(normalizeUsername),
+    asyncHandler(userController.getUserChannelProfile)
+  );
+
 // jwt secured routes
 
 // This middleware runs for all routes defined AFTER it
@@ -66,13 +75,6 @@ router
 router
   .route('/current-user-details')
   .get(asyncHandler(userController.getCurrentUser));
-
-router
-  .route('/c/:username')
-  .get(
-    asyncHandler(normalizeUsername),
-    asyncHandler(userController.getUserChannelProfile)
-  );
 
 router
   .route('/update-account')

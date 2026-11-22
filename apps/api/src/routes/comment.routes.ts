@@ -1,19 +1,21 @@
 import { Router } from 'express';
 import * as commentController from '../controllers/comment.controller.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { optionalAuth, verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.use(verifyJWT);
-
 router
   .route('/:videoId')
-  .get(commentController.getVideoComments)
-  .post(commentController.addComment);
+  .get(optionalAuth, commentController.getVideoComments)
+  .post(verifyJWT, commentController.addComment);
 
 router
   .route('/c/:commentId')
-  .delete(commentController.deleteComment)
-  .patch(commentController.updateComment);
+  .delete(verifyJWT, commentController.deleteComment)
+  .patch(verifyJWT, commentController.updateComment);
+
+router
+  .route('/c/:commentId/replies')
+  .get(optionalAuth, commentController.getCommentReplies);
 
 export default router;

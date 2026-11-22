@@ -24,7 +24,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["healthcheck"]
             },
-            "description": "Check if the server is running"
+            "description": "Returns 200 when the database and AI worker are reachable, 503 with `checks` showing which is down otherwise."
           },
           "response": []
         }
@@ -370,7 +370,7 @@
                 }
               ]
             },
-            "description": "Get channel profile by username"
+            "description": "Public (login optional). Channel profile with subscriber counts. `isSubscribed` reflects the logged-in user; `email` is only included for the channel owner."
           },
           "response": []
         },
@@ -488,7 +488,33 @@
                 }
               ]
             },
-            "description": "Get all published videos with pagination and filters"
+            "description": "Public (login optional). List published videos with pagination. `query` runs full-text search (title matches rank above description; supports \"quoted phrases\" and -exclude) and sorts by relevance unless `sortBy` is set. `sortBy`: relevance | createdAt | views | duration (anything else returns 400). With `userId` equal to the logged-in user, unpublished videos are included."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subscription Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/videos/feed?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["videos", "feed"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true,
+                  "description": "nextCursor from the previous page"
+                }
+              ]
+            },
+            "description": "Newest published videos from subscribed channels. Cursor-paginated: returns { items, nextCursor }; pass nextCursor as `cursor` for the next page (null when done)."
           },
           "response": []
         },
@@ -508,7 +534,67 @@
                 }
               ]
             },
-            "description": "Get specific video details by ID"
+            "description": "Public (login optional). Get video details. Does not count a view (use Record View). Unpublished videos return 404 except to their owner. Logged-in users get a watch-history entry."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Video Processing Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/videos/:videoId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["videos", ":videoId", "status"],
+              "variable": [
+                {
+                  "key": "videoId",
+                  "value": "{{videoId}}"
+                }
+              ]
+            },
+            "description": "Public (login optional). AI processing state: { processingStatus: PROCESSING | COMPLETED | FAILED, hasTranscript, allowPublicQnA }. Poll while PROCESSING."
+          },
+          "response": []
+        },
+        {
+          "name": "Record View",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/videos/:videoId/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["videos", ":videoId", "view"],
+              "variable": [
+                {
+                  "key": "videoId",
+                  "value": "{{videoId}}"
+                }
+              ]
+            },
+            "description": "Public (login optional). Call after ~10s of playback. Counts at most once per viewer per video per day (user id when logged in, otherwise IP + user agent). Returns { counted, views }."
+          },
+          "response": []
+        },
+        {
+          "name": "Reprocess Video (AI)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/videos/:videoId/reprocess",
+              "host": ["{{baseUrl}}"],
+              "path": ["videos", ":videoId", "reprocess"],
+              "variable": [
+                {
+                  "key": "videoId",
+                  "value": "{{videoId}}"
+                }
+              ]
+            },
+            "description": "Owner only. Re-queues AI transcription/embedding for a FAILED video (409 otherwise). Returns 202."
           },
           "response": []
         },
@@ -624,7 +710,7 @@
                 }
               ]
             },
-            "description": "Get all comments for a video"
+            "description": "Public (login optional). Top-level comments, newest first, each with `replyCount`. Load replies with Get Comment Replies."
           },
           "response": []
         },
@@ -669,7 +755,71 @@
                 }
               ]
             },
-            "description": "Add a comment to a video"
+            "description": "Add a top-level comment. To reply, send `parentId` (see Reply to Comment)."
+          },
+          "response": []
+        },
+        {
+          "name": "Reply to Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"Thanks, this helped!\",\n    \"parentId\": \"{{commentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/comments/:videoId",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", ":videoId"],
+              "variable": [
+                {
+                  "key": "videoId",
+                  "value": "{{videoId}}"
+                }
+              ]
+            },
+            "description": "Reply to a top-level comment on the same video. Replies are one level deep: replying to a reply returns 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Comment Replies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/c/:commentId/replies?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", "c", ":commentId", "replies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "commentId",
+                  "value": "{{commentId}}"
+                }
+              ]
+            },
+            "description": "Public (login optional). Replies to a comment, oldest first."
           },
           "response": []
         },

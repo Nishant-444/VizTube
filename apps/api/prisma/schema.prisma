@@ -78,9 +78,24 @@ model Video {
   watchHistories WatchHistory[]
   transcript     Transcript?
   documentChunks DocumentChunk[]
+  viewRecords    VideoView[]
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// one row per viewer per video per day, so repeat views don't inflate Video.views
+model VideoView {
+  id        String   @id @default(uuid(7))
+  videoId   String
+  // user id when logged in, otherwise a hash of IP + user agent
+  viewerKey String
+  day       DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, viewerKey, day])
 }
 
 model Comment {
@@ -88,16 +103,21 @@ model Comment {
   content   String
   userId    String
   videoId   String
+  // set on replies; replies are one level deep
+  parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  video Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  likes Like[]
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video   Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+  likes   Like[]
 
   @@index([videoId])
   @@index([userId])
+  @@index([parentId])
 }
 
 model Like {

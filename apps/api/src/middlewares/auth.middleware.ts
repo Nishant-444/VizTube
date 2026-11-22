@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -10,10 +11,28 @@ interface JWTPayload {
   fullname: string;
 }
 
+const getToken = (req: Request): string | undefined =>
+  req.cookies?.accessToken ||
+  req.header('Authorization')?.replace('Bearer ', '');
+
+const findUser = (id: string) =>
+  prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      fullname: true,
+      avatar: true,
+      coverImage: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+// requires a valid access token; sets req.user
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-  const token =
-    req.cookies?.accessToken ||
-    req.header('Authorization')?.replace('Bearer ', '');
+  const token = getToken(req);
 
   if (!token) {
     throw new ApiError(401, 'Unauthorized request');
@@ -31,21 +50,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, errorMessage);
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: decodedToken.id,
-    },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      fullname: true,
-      avatar: true,
-      coverImage: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const user = await findUser(decodedToken.id);
 
   if (!user) {
     throw new ApiError(401, 'Invalid Access Token');
@@ -53,5 +58,23 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
   req.user = user;
   next();
+});
 
+// for public routes: sets req.user when a valid token is present, never rejects
+export const optionalAuth = asyncHandler(async (req, res, next) => {
+  const token = getToken(req);
+  if (!token) return next();
+
+  try {
+    const decodedToken = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as string
+    ) as JWTPayload;
+    const user = await findUser(decodedToken.id);
+    if (user) req.user = user;
+  } catch {
+    // expired or invalid token: continue as an anonymous visitor
+  }
+
+  next();
 });
