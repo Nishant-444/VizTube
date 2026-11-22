@@ -29,10 +29,21 @@ export function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
-const NO_REFRESH = ["/user/login", "/user/register", "/user/refresh-token"];
+const NO_REFRESH = ["/user/login", "/user/register", "/user/refresh-token", "/user/logout"];
 
-async function parse<T>(res: Response): Promise<T> {
+/** Fired when a request is still unauthorized after a refresh attempt; AuthProvider opens the sign-in dialog. */
+export const AUTH_REQUIRED_EVENT = "viztube:auth-required";
+
+const SIGN_IN_MESSAGE = "Please sign in to continue.";
+
+async function parse<T>(res: Response, path: string): Promise<T> {
   const body = (await res.json().catch(() => null)) as ApiEnvelope<T> | null;
+  // the session is gone: ask the user to sign in instead of surfacing
+  // raw API messages like "Invalid Access Token" or "jwt expired"
+  if (res.status === 401 && !NO_REFRESH.includes(path)) {
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
+    throw new ApiClientError(SIGN_IN_MESSAGE, 401);
+  }
   if (!res.ok) {
     throw new ApiClientError(
       body?.message || `Request failed (${res.status})`,
@@ -62,7 +73,7 @@ export async function api<T>(path: string, init: JsonInit = {}): Promise<T> {
   if (res.status === 401 && !NO_REFRESH.includes(path)) {
     if (await refreshSession()) res = await request();
   }
-  return parse<T>(res);
+  return parse<T>(res, path);
 }
 
 /** Multipart upload with progress (fetch can't report upload progress). */
@@ -91,7 +102,10 @@ export function uploadWithProgress<T>(
           /* non-JSON error page */
         }
         if (xhr.status >= 200 && xhr.status < 300) resolve(body?.data as T);
-        else
+        else if (xhr.status === 401) {
+          window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
+          reject(new ApiClientError(SIGN_IN_MESSAGE, 401));
+        } else
           reject(
             new ApiClientError(
               body?.message || `Upload failed (${xhr.status})`,

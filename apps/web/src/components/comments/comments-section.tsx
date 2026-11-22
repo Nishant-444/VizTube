@@ -321,7 +321,7 @@ export function CommentsSection({
   videoId: string;
   initialCount: number;
 }) {
-  const { user } = useAuth();
+  const { user, promptSignIn } = useAuth();
   const queryClient = useQueryClient();
   const comments = usePagedComments(
     ['comments', videoId],
@@ -367,12 +367,12 @@ export function CommentsSection({
           </div>
         ) : (
           <p className="mb-6 text-sm text-muted-foreground">
-            <Link
-              href={`/login?next=/watch/${videoId}`}
-              className="font-medium text-foreground underline"
+            <button
+              onClick={() => promptSignIn("Sign in to comment on videos.")}
+              className="font-medium text-foreground underline underline-offset-2"
             >
               Sign in
-            </Link>{' '}
+            </button>{' '}
             to join the conversation.
           </p>
         )}

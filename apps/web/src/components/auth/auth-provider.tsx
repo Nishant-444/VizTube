@@ -11,13 +11,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, refreshSession } from "@/lib/api/client";
+import { api, AUTH_REQUIRED_EVENT, refreshSession } from "@/lib/api/client";
 import type { User } from "@/lib/api/types";
+import { SignInDialog } from "./sign-in-dialog";
 
 interface AuthContextValue {
   user: User | null;
+  /** True while an expired session is being renewed in the background. */
+  restoring: boolean;
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
+  /** Open the sign-in dialog, optionally explaining why. */
+  promptSignIn: (reason?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -33,6 +38,8 @@ export function AuthProvider({
 }) {
   const [user, setUser] = useState(initialUser);
   const [serverUser, setServerUser] = useState(initialUser);
+  const [restoring, setRestoring] = useState(!initialUser && canRefresh);
+  const [dialog, setDialog] = useState<{ open: boolean; reason?: string }>({ open: false });
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -47,18 +54,44 @@ export function AuthProvider({
   useEffect(() => {
     if (initialUser || !canRefresh) return;
     let cancelled = false;
-    refreshSession().then(async (ok) => {
-      if (!ok || cancelled) return;
-      const me = await api<User>("/user/current-user-details").catch(() => null);
-      if (!cancelled && me) {
-        setUser(me);
-        router.refresh();
-      }
-    });
+    refreshSession()
+      .then(async (ok) => {
+        if (!ok || cancelled) return;
+        const me = await api<User>("/user/current-user-details").catch(() => null);
+        if (!cancelled && me) {
+          setUser(me);
+          router.refresh();
+        }
+      })
+      .finally(() => !cancelled && setRestoring(false));
     return () => {
       cancelled = true;
     };
   }, [initialUser, canRefresh, router]);
+
+  const promptSignIn = useCallback((reason?: string) => setDialog({ open: true, reason }), []);
+  const closeDialog = useCallback(() => setDialog({ open: false }), []);
+
+  // any API call that still gets 401 after a refresh attempt lands here
+  useEffect(() => {
+    const onAuthRequired = () => {
+      setUser(null);
+      queryClient.removeQueries({ predicate: (q) => q.state.status === "error" });
+      setDialog({ open: true, reason: "Your session has ended. Sign in again to continue." });
+    };
+    window.addEventListener(AUTH_REQUIRED_EVENT, onAuthRequired);
+    return () => window.removeEventListener(AUTH_REQUIRED_EVENT, onAuthRequired);
+  }, [queryClient]);
+
+  const onSignedIn = useCallback(
+    (signedIn: User) => {
+      setUser(signedIn);
+      setDialog({ open: false });
+      void queryClient.invalidateQueries();
+      router.refresh();
+    },
+    [queryClient, router],
+  );
 
   const logout = useCallback(async () => {
     await api("/user/logout", { method: "POST" }).catch(() => undefined);
@@ -68,8 +101,17 @@ export function AuthProvider({
     router.refresh();
   }, [queryClient, router]);
 
-  const value = useMemo(() => ({ user, setUser, logout }), [user, logout]);
-  return <AuthContext value={value}>{children}</AuthContext>;
+  const value = useMemo(
+    () => ({ user, restoring, setUser, logout, promptSignIn }),
+    [user, restoring, logout, promptSignIn],
+  );
+
+  return (
+    <AuthContext value={value}>
+      {children}
+      <SignInDialog open={dialog.open} reason={dialog.reason} onClose={closeDialog} onSignedIn={onSignedIn} />
+    </AuthContext>
+  );
 }
 
 export function useAuth() {
@@ -78,16 +120,14 @@ export function useAuth() {
   return ctx;
 }
 
-/** Returns a function that runs `action` if logged in, otherwise sends to login. */
+/** Returns a function that runs `action` when signed in, otherwise opens the sign-in dialog. */
 export function useRequireAuth() {
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, promptSignIn } = useAuth();
   return useCallback(
-    (action: () => void) => {
+    (action: () => void, reason?: string) => {
       if (user) return action();
-      const next = window.location.pathname + window.location.search;
-      router.push(`/login?next=${encodeURIComponent(next)}`);
+      promptSignIn(reason);
     },
-    [user, router],
+    [user, promptSignIn],
   );
 }

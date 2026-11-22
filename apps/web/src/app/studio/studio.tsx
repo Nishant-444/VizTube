@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Alert, Badge, EmptyState, Skeleton, Spinner } from "@/components/ui/misc";
 import { StatusBadge } from "@/components/video/status-badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { api, errorMessage } from "@/lib/api/client";
 import type { ChannelStats, StudioVideo } from "@/lib/api/types";
 import { formatCount, formatDuration, secureUrl, timeAgo } from "@/lib/utils";
@@ -100,7 +101,7 @@ function VideoRow({ video }: { video: StudioVideo }) {
   const error = togglePublish.error ?? reprocess.error ?? remove.error;
 
   return (
-    <li className="flex flex-col gap-4 border-b py-4 sm:flex-row">
+    <li className="flex flex-col gap-4 border-b py-4 last:border-b-0 sm:flex-row">
       <Link href={`/watch/${video.id}`} className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:w-44">
         <Image src={secureUrl(video.thumbnailUrl)} alt="" fill sizes="176px" className="object-cover" />
         <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-xs text-white">
@@ -192,15 +193,24 @@ export function Studio() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Studio</h1>
-        <Link href="/upload" className={buttonVariants({ variant: "primary" })}>
-          <Upload /> Upload
-        </Link>
-      </div>
+      <PageHeader
+        title="Channel overview"
+        actions={
+          <Link href="/upload" className={buttonVariants({ variant: "primary" })}>
+            <Upload /> Upload video
+          </Link>
+        }
+      />
       <Stats />
       <section>
-        <h2 className="mb-2 text-lg font-semibold">Your videos</h2>
+        <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+          Your videos
+          {videos.data && (
+            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+              {videos.data.totalVideos}
+            </span>
+          )}
+        </h2>
         {videos.isLoading && <Spinner />}
         {videos.isError && <Alert>{errorMessage(videos.error)}</Alert>}
         {videos.data?.videos.length === 0 && (
@@ -210,7 +220,7 @@ export function Studio() {
             </Link>
           </EmptyState>
         )}
-        <ul>
+        <ul className={videos.data?.videos.length ? "rounded-xl border bg-card px-4" : undefined}>
           {videos.data?.videos.map((v) => (
             <VideoRow key={v.id} video={v} />
           ))}

@@ -36,14 +36,14 @@ export function Badge({
 }) {
   const tones = {
     neutral: "bg-muted text-muted-foreground",
-    success: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-    warning: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-    danger: "bg-destructive/15 text-destructive",
+    success: "bg-success/10 text-success",
+    warning: "bg-warning/10 text-warning",
+    danger: "bg-destructive/10 text-destructive",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium",
         tones[tone],
         className,
       )}
@@ -70,7 +70,7 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-sidebar px-6 py-16 text-center">
       <p className="font-medium">{title}</p>
       {description && (
         <p className="max-w-sm text-sm text-muted-foreground">{description}</p>

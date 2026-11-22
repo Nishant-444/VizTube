@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Alert, EmptyState, Spinner } from "@/components/ui/misc";
+import { PageHeader } from "@/components/ui/page-header";
 import { api, errorMessage } from "@/lib/api/client";
 import type { PlaylistSummary } from "@/lib/api/types";
 import { secureUrl, timeAgo } from "@/lib/utils";
@@ -57,35 +58,38 @@ export function Playlists() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Playlists</h1>
-        {!creating && (
-          <Button variant="inverted" onClick={() => setCreating(true)}>
-            <Plus /> New playlist
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Your playlists"
+        count={playlists.data?.length}
+        actions={
+          !creating && (
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus /> New playlist
+            </Button>
+          )
+        }
+      />
       {creating && <CreatePlaylist onDone={() => setCreating(false)} />}
       {playlists.isLoading && <Spinner />}
       {playlists.isError && <Alert>{errorMessage(playlists.error)}</Alert>}
       {playlists.data?.length === 0 && !creating && (
         <EmptyState title="No playlists yet" description="Create one, then use Save on any video to add it." />
       )}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {playlists.data?.map((p) => (
-          <Link key={p.id} href={`/playlists/${p.id}`} className="group flex flex-col gap-2">
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+          <Link key={p.id} href={`/playlists/${p.id}`} className="group flex flex-col gap-3 rounded-xl border bg-card p-2 transition-shadow hover:shadow-md">
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
               {p.thumbnail ? (
                 <Image src={secureUrl(p.thumbnail)} alt="" fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" />
               ) : (
                 <ListVideo className="absolute inset-0 m-auto size-10 text-muted-foreground" />
               )}
-              <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded bg-black/80 px-1.5 py-0.5 text-xs text-white">
+              <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-background/90 px-1.5 py-0.5 text-xs font-medium shadow-xs backdrop-blur">
                 <ListVideo className="size-3" /> {p.totalVideos} video{p.totalVideos === 1 ? "" : "s"}
               </span>
             </div>
-            <div>
-              <p className="font-medium group-hover:underline">{p.name}</p>
+            <div className="px-1.5 pb-1">
+              <p className="font-medium">{p.name}</p>
               <p className="text-sm text-muted-foreground">Created {timeAgo(p.createdAt)}</p>
             </div>
           </Link>

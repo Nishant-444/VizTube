@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { LogoMark } from "@/components/layout/logo";
 
 export function AuthCard({
   title,
@@ -13,14 +13,9 @@ export function AuthCard({
   footer: ReactNode;
 }) {
   return (
-    <div className="mx-auto mt-8 w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
-      <Link href="/" className="mb-6 flex items-center gap-2 font-semibold">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs text-primary-foreground">
-          ▶
-        </span>
-        VizTube
-      </Link>
-      <h1 className="text-2xl font-semibold">{title}</h1>
+    <div className="mx-auto mt-6 w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
+      <LogoMark size={44} />
+      <h1 className="mt-5 text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mb-6 mt-1 text-sm text-muted-foreground">{subtitle}</p>
       {children}
       <p className="mt-6 text-center text-sm text-muted-foreground">{footer}</p>

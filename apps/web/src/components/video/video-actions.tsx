@@ -30,10 +30,10 @@ function LikeButton({ videoId, initialLiked, initialCount }: { videoId: string; 
       } finally {
         setPending(false);
       }
-    });
+    }, "Sign in to like videos.");
 
   return (
-    <Button onClick={toggle} disabled={pending} aria-pressed={liked}>
+    <Button onClick={toggle} disabled={pending} aria-pressed={liked} aria-label={`Like (${formatCount(count)})`}>
       <ThumbsUp className={liked ? "fill-current" : undefined} />
       {formatCount(count)}
     </Button>
@@ -75,7 +75,7 @@ function SaveMenu({ videoId }: { videoId: string }) {
 
   return (
     <div className="relative" ref={ref}>
-      <Button onClick={() => requireAuth(() => setOpen((o) => !o))} aria-expanded={open}>
+      <Button onClick={() => requireAuth(() => setOpen((o) => !o), "Sign in to save videos to your playlists.")} aria-expanded={open}>
         <ListPlus /> Save
       </Button>
       {open && (

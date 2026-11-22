@@ -50,7 +50,7 @@ export function SubscribeButton({
       } finally {
         setPending(false);
       }
-    });
+    }, "Sign in to subscribe to channels.");
 
   return (
     <div className="flex items-center gap-3">

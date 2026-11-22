@@ -2,7 +2,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, RotateCw, SendHorizonal, Sparkles } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -151,7 +150,7 @@ function Chat({ videoId }: { videoId: string }) {
 }
 
 export function AiPanel({ videoId, ownerId, initialStatus }: { videoId: string; ownerId: string; initialStatus: VideoStatus }) {
-  const { user } = useAuth();
+  const { user, promptSignIn } = useAuth();
   const queryClient = useQueryClient();
   const [reprocessError, setReprocessError] = useState<string | null>(null);
 
@@ -206,9 +205,12 @@ export function AiPanel({ videoId, ownerId, initialStatus }: { videoId: string; 
   } else if (!user) {
     body = (
       <p className="p-4 text-sm text-muted-foreground">
-        <Link href={`/login?next=/watch/${videoId}`} className="font-medium text-foreground underline">
+        <button
+          onClick={() => promptSignIn("Sign in to ask AI questions about this video.")}
+          className="font-medium text-foreground underline underline-offset-2"
+        >
           Sign in
-        </Link>{" "}
+        </button>{" "}
         to ask AI questions about this video.
       </p>
     );
