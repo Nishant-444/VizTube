@@ -3,7 +3,7 @@ name: Deploy VizTube API to EC2
 on:
   push:
     branches:
-      - master # Triggers when you push to master
+      - main # Triggers when you push to main
 
 jobs:
   build-and-push:
