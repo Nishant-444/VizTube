@@ -127,8 +127,14 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!username && !email)
     throw new ApiError(400, 'Username or email required');
 
+  // only include provided identifiers: `{ email: undefined }` would match every user
   const user = await prisma.user.findFirst({
-    where: { OR: [{ email }, { username }] },
+    where: {
+      OR: [
+        ...(email ? [{ email }] : []),
+        ...(username ? [{ username: username.toLowerCase() }] : []),
+      ],
+    },
   });
 
   if (!user) throw new ApiError(404, 'User not Found!');
