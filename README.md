@@ -93,7 +93,10 @@ Client → Cloudflare (SSL/DNS) → Nginx (SSL/TLS) → Docker Containers (API +
 
 | Layer         | Technology                  | Version  | Purpose                                   |
 | ------------- | --------------------------- | -------- | ----------------------------------------- |
-| Runtime       | Node.js                     | v18+     | Server execution environment              |
+| Frontend      | Next.js (App Router) + React | v16 / v19 | Server-rendered UI with SEO metadata     |
+| UI            | Tailwind CSS + TanStack Query | v4 / v5 | Styling, client data fetching and polling |
+| Job queue     | pg-boss (Postgres-backed)   | v12      | Durable AI ingestion jobs with retries    |
+| Runtime       | Node.js                     | v20.9+   | Server execution environment              |
 | Language      | TypeScript                  | v5.9.3   | Type safety, compile-time error detection |
 | Framework     | Express.js                  | v5.1.0   | HTTP request handling, middleware         |
 | Database      | PostgreSQL                  | v14+     | Relational data storage                   |
@@ -481,7 +484,8 @@ pnpm install
 # Configure environment
 cp apps/api/.env.sample apps/api/.env
 cp apps/ai-worker/.env.sample apps/ai-worker/.env
-# Edit both .env files with your credentials
+cp apps/web/.env.example apps/web/.env.local
+# Edit the API and AI worker .env files with your credentials
 
 # Setup database
 cd apps/api
@@ -492,13 +496,15 @@ cd ../..
 # Optional: run local PostgreSQL via Docker
 docker compose -f docker-compose.dev.yml up -d
 
-# Run API + AI worker together
+# Run API (:3000) + AI worker (:8000) + web app (:3001) together
 # (uv creates apps/ai-worker/.venv and installs dependencies on first run)
 pnpm dev
+# Open http://localhost:3001
 
 # Or run them individually
 pnpm dev:api
 pnpm dev:ai
+pnpm dev:web
 ```
 
 ### CI/CD Pipeline
@@ -652,6 +658,12 @@ viztube/                        # pnpm workspace root
 │   │   ├── public/temp/        # Temporary upload storage
 │   │   ├── Dockerfile          # API image (build from repo root)
 │   │   └── .env.sample         # API environment template
+│   ├── web/                    # Next.js 16 frontend (@viztube/web)
+│   │   ├── src/app/            # Routes: home, watch, search, channel, upload, studio, ...
+│   │   ├── src/components/     # UI, video, comments, AI chat panel
+│   │   ├── src/lib/api/        # Browser + server API clients, response types
+│   │   ├── src/proxy.ts        # Redirects logged-out users away from private pages
+│   │   └── next.config.ts      # /api/v2 rewrite to Express (same-origin cookies)
 │   └── ai-worker/              # FastAPI Python microservice
 │       ├── main.py             # FastAPI app entry point
 │       ├── transcriber.py      # Whisper integration (via Groq API)

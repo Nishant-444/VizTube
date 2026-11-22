@@ -14,11 +14,13 @@
   "license": "ISC",
   "author": "nishant sharma",
   "scripts": {
-    "dev": "concurrently -n api,ai -c blue,magenta \"pnpm run dev:api\" \"pnpm run dev:ai\"",
+    "dev": "concurrently -n api,ai,web -c blue,magenta,green \"pnpm run dev:api\" \"pnpm run dev:ai\" \"pnpm run dev:web\"",
     "dev:api": "pnpm --filter @viztube/api dev",
     "dev:ai": "uv run --directory apps/ai-worker uvicorn main:app --reload --port 8000",
+    "dev:web": "pnpm --filter @viztube/web dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm --filter @viztube/web lint"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",
