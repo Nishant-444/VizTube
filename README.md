@@ -458,32 +458,30 @@ OpenRouter API key
 git clone https://github.com/Nishant-444/VizTube.git
 cd VizTube
 
-# Install dependencies
-npm install
+# Install dependencies (pnpm workspace; Python deps need uv: https://docs.astral.sh/uv/)
+pnpm install
 
 # Configure environment
-cp .env.sample .env
-# Edit .env with your credentials
+cp apps/api/.env.sample apps/api/.env
+cp apps/ai-worker/.env.sample apps/ai-worker/.env
+# Edit both .env files with your credentials
 
 # Setup database
-npx prisma generate
-npx prisma migrate dev
+cd apps/api
+pnpm exec prisma generate
+pnpm exec prisma migrate dev
+cd ../..
 
 # Optional: run local PostgreSQL via Docker
 docker compose -f docker-compose.dev.yml up -d
 
-# Build TypeScript
-npm run build
+# Run API + AI worker together
+# (uv creates apps/ai-worker/.venv and installs dependencies on first run)
+pnpm dev
 
-# Start development server
-npm run dev
-
-# Start AI worker (separate terminal; requires uv: https://docs.astral.sh/uv/)
-# uv creates ai-worker/.venv and installs dependencies automatically on first run
-pnpm run dev:ai
-
-# Or run backend + AI worker together
-pnpm run dev:all
+# Or run them individually
+pnpm dev:api
+pnpm dev:ai
 ```
 
 ### CI/CD Pipeline
@@ -511,7 +509,7 @@ This project uses **GitHub Actions** for automated deployment. On every push to 
 
 ### Environment Variables
 
-#### Node.js Express App Environment (`.env` in root)
+#### Node.js Express App Environment (`apps/api/.env`)
 ```env
 PORT=3000
 CORS_ORIGIN=*
@@ -538,7 +536,7 @@ OPENROUTER_API_KEY=<openrouter-api-key>
 GROQ_API_KEY=<groq-api-key>
 ```
 
-#### Python AI Worker Environment (`.env` in `ai-worker/`)
+#### Python AI Worker Environment (`apps/ai-worker/.env`)
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/viztube?schema=public
 OPENROUTER_API_KEY=<openrouter-api-key>
@@ -611,28 +609,32 @@ curl -X POST http://localhost:8000/api/v2/videos \
 ## Project Structure
 
 ```
-viztube/
-├── prisma/
-│   ├── schema.prisma           # Database models (Users, Videos, etc.)
-│   └── migrations/             # Migration history
-├── src/
-│   ├── index.ts                # Application entry point
-│   ├── app.ts                  # Express configuration
-│   ├── controllers/            # Business logic (user, video, comment, etc.)
-│   ├── routes/                 # API route definitions
-│   ├── middlewares/            # Auth, file upload, error handling
-│   ├── utils/                  # ApiResponse, ApiError, Cloudinary helpers
-│   └── validators/             # Input validation schemas
-├── ai-worker/                  # FastAPI Python microservice
-│   ├── main.py                 # FastAPI app entry point
-│   ├── transcriber.py          # Whisper integration (via Groq API)
-│   ├── rag.py                  # RAG query and chunking pipeline (via pgvector)
-│   ├── pyproject.toml          # Python dependencies (managed by uv)
-│   └── uv.lock                 # Locked dependency versions
-├── public/temp/                # Temporary upload storage
+viztube/                        # pnpm workspace root
+├── apps/
+│   ├── api/                    # Express + Prisma REST API (@viztube/api)
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma   # Database models (Users, Videos, etc.)
+│   │   │   └── migrations/     # Migration history
+│   │   ├── src/
+│   │   │   ├── index.ts        # Application entry point
+│   │   │   ├── app.ts          # Express configuration
+│   │   │   ├── controllers/    # Business logic (user, video, comment, etc.)
+│   │   │   ├── routes/         # API route definitions
+│   │   │   ├── middlewares/    # Auth, file upload, error handling
+│   │   │   ├── utils/          # ApiResponse, ApiError, Cloudinary helpers
+│   │   │   └── validators/     # Input validation schemas
+│   │   ├── public/temp/        # Temporary upload storage
+│   │   ├── Dockerfile          # API image (build from repo root)
+│   │   └── .env.sample         # API environment template
+│   └── ai-worker/              # FastAPI Python microservice
+│       ├── main.py             # FastAPI app entry point
+│       ├── transcriber.py      # Whisper integration (via Groq API)
+│       ├── rag.py              # RAG query and chunking pipeline (via pgvector)
+│       ├── pyproject.toml      # Python dependencies (managed by uv)
+│       └── uv.lock             # Locked dependency versions
+├── docs/                       # PRD, Postman collection, assets
 ├── docker-compose.yml          # Docker orchestration
-├── Dockerfile                  # Container image definition
-└── .env.sample                 # Environment template
+└── pnpm-workspace.yaml         # Workspace packages
 ```
 
 ---

@@ -1,16 +1,22 @@
-/node_modules
+node_modules/
 /.vscode
 /.idea
 .env
-/.git
-/dist
-/src/generated/
+dist/
 *.db
 *.db-journal
-/public/temp/*
+.DS_Store
+
+# API
+apps/api/src/generated/
+apps/api/public/temp/*
+
+# Web
+.next/
+next-env.d.ts
+*.tsbuildinfo
 
 # Python
 .venv/
 __pycache__/
-.env
 .pytest_cache/

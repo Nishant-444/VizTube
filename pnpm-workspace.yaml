@@ -6,5 +6,5 @@ allowBuilds:
   prisma: true
 
 packages:
-  - '.'
-  - 'ai-worker'
+  - 'apps/api'
+  - 'apps/web'

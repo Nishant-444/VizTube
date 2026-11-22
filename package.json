@@ -1,57 +1,28 @@
 {
   "name": "viztube",
   "version": "2.0.0",
-  "description": "Project inspired by youtube and twitter",
+  "private": true,
+  "description": "Full-stack video platform with AI video Q&A (inspired by YouTube and Twitter)",
   "keywords": [
     "nodejs",
     "prisma",
     "express",
-    "backend"
+    "nextjs",
+    "rag",
+    "pgvector"
   ],
   "license": "ISC",
   "author": "nishant sharma",
-  "type": "module",
-  "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --ignore \"public/**\" src/index.ts",
-    "start": "node dist/index.js",
-    "dev:backend": "pnpm run dev",
-    "dev:ai": "uv run --directory ai-worker uvicorn main:app --reload --port 8000",
-    "dev:all": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:ai\""
+    "dev": "concurrently -n api,ai -c blue,magenta \"pnpm run dev:api\" \"pnpm run dev:ai\"",
+    "dev:api": "pnpm --filter @viztube/api dev",
+    "dev:ai": "uv run --directory apps/ai-worker uvicorn main:app --reload --port 8000",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.0",
-    "@types/bcrypt": "^6.0.0",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/form-data": "^2.5.2",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^25.0.3",
-    "@types/pg": "^8.16.0",
     "concurrently": "^10.0.4",
-    "eslint": "^9.39.0",
-    "prettier": "^3.6.2",
-    "prisma": "^7.2.0",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
-    "axios": "^1.17.0",
-    "bcrypt": "^6.0.0",
-    "cloudinary": "^2.8.0",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "form-data": "^4.0.6",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
-    "pg": "^8.16.3"
+    "prettier": "^3.6.2"
   },
   "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916"
 }

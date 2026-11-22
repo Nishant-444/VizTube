@@ -1,37 +1,10 @@
-# Exclude dependency directories
-node_modules/
-.venv/
-venv/
-__pycache__/
-*.pyc
-
-# Exclude local environment files and git configuration
+**/node_modules/
+**/dist/
+**/.next/
+**/.venv/
+**/__pycache__/
+**/.env
+**/*.log
 .git/
-.gitignore
-.env
-*.log
-
-# Exclude local media/storage if you have any test videos locally
-storage/
-uploads/
-dist/
-build/
-
-# Exclude Node dependencies
-node_modules/
-npm-debug.log
-pnpm-error.log
-
-# Exclude Python/AI stuff so Node doesn't copy it
-ai-worker/.venv/
-ai-worker/venv/
-ai-worker/__pycache__/
-*.pyc
-
-# Exclude Git and local env
-.git/
-.env
-
-# Exclude local build folders
-dist/
-build/
+apps/api/src/generated/
+apps/api/public/temp/*

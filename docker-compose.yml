@@ -1,26 +1,24 @@
-version: '3.8'
-
 services:
   gateway:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/api/Dockerfile
     container_name: viztube-gateway
     ports:
       - '3000:3000'
     env_file:
-      - .env
+      - apps/api/.env
     depends_on:
       - ai-worker
     restart: unless-stopped
 
   ai-worker:
     build:
-      context: ./ai-worker
+      context: apps/ai-worker
       dockerfile: Dockerfile
     container_name: viztube-ai-worker
     ports:
       - '8000:8000'
     env_file:
-      - ./ai-worker/.env
+      - apps/ai-worker/.env
     restart: unless-stopped
