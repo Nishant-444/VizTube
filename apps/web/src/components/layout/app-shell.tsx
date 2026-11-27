@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   LayoutDashboard,
-  LogIn,
   LogOut,
   Menu,
   PanelLeft,
@@ -21,6 +20,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type FormEvent,
   type ReactNode,
 } from 'react';
@@ -30,7 +30,6 @@ import { Avatar } from '@/components/ui/misc';
 import { cn } from '@/lib/utils';
 import { Logo } from './logo';
 import { isActive, NAV_ITEMS, pageTitle } from './nav-items';
-import { ThemeToggle } from './theme-toggle';
 
 function QuickSearch({
   collapsed,
@@ -119,7 +118,7 @@ function SidebarContent({
   isDrawer?: boolean;
 }) {
   const pathname = usePathname();
-  const { user, promptSignIn } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="flex h-full flex-col">
@@ -130,23 +129,14 @@ function SidebarContent({
         )}
       >
         <Logo collapsed={collapsed} />
-        {!collapsed && (
+        {/* the mobile drawer closes from the top; the desktop toggle lives in the footer */}
+        {isDrawer && (
           <button
             onClick={onToggleCollapse}
-            aria-label={
-              isDrawer
-                ? 'Close menu'
-                : collapsed
-                  ? 'Expand sidebar'
-                  : 'Collapse sidebar'
-            }
+            aria-label="Close menu"
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            {isDrawer ? (
-              <X className="size-5" />
-            ) : (
-              <PanelLeft className="size-5" />
-            )}
+            <X className="size-5" />
           </button>
         )}
       </div>
@@ -157,7 +147,8 @@ function SidebarContent({
         >
           <QuickSearch collapsed={collapsed} onNavigate={onNavigate} />
         </Suspense>
-        {user ? (
+        {/* signed-out visitors use the Sign in button in the top bar */}
+        {user && (
           <Link
             href="/upload"
             onClick={onNavigate}
@@ -170,21 +161,6 @@ function SidebarContent({
             <PlusCircle className="size-[18px] text-muted-foreground" />
             {!collapsed && 'Upload video'}
           </Link>
-        ) : (
-          <button
-            onClick={() => {
-              promptSignIn();
-              onNavigate();
-            }}
-            title={collapsed ? 'Sign in' : undefined}
-            className={cn(
-              'mt-1 flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-muted',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            <LogIn className="size-[18px] text-muted-foreground" />
-            {!collapsed && 'Sign in'}
-          </button>
         )}
       </div>
 
@@ -219,15 +195,21 @@ function SidebarContent({
         })}
       </nav>
 
-      {collapsed && (
-        <button
-          onClick={onToggleCollapse}
-          aria-label="Expand sidebar"
-          title="Expand sidebar"
-          className="mx-auto mb-4 mt-auto rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <PanelLeft className="size-5" />
-        </button>
+      {!isDrawer && (
+        <div className="mt-auto border-t p-3">
+          <button
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground',
+              collapsed && 'justify-center px-0'
+            )}
+          >
+            <PanelLeft className="size-[18px]" />
+            {!collapsed && 'Collapse'}
+          </button>
+        </div>
       )}
     </div>
   );
@@ -326,7 +308,6 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         {pageTitle(pathname)}
       </p>
       <div className="ml-auto flex items-center gap-2">
-        <ThemeToggle />
         {user && (
           <Link
             href="/upload"
@@ -343,8 +324,39 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   );
 }
 
+// remembered across visits; read through useSyncExternalStore so it stays in sync between tabs
+const SIDEBAR_KEY = 'viztube-sidebar';
+const SIDEBAR_EVENT = 'viztube-sidebar-change';
+const subscribeSidebar = (onChange: () => void) => {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(SIDEBAR_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(SIDEBAR_EVENT, onChange);
+  };
+};
+const readCollapsed = () => {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
+};
+const setCollapsedPref = (value: boolean) => {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, value ? 'collapsed' : 'expanded');
+  } catch {
+    /* private mode: just won't persist */
+  }
+  window.dispatchEvent(new Event(SIDEBAR_EVENT));
+};
+
 export function AppShell({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useSyncExternalStore(
+    subscribeSidebar,
+    readCollapsed,
+    () => false
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
   const [lastPath, setLastPath] = useState(pathname);
@@ -373,7 +385,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <SidebarContent
           collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed((c) => !c)}
+          onToggleCollapse={() => setCollapsedPref(!collapsed)}
           onNavigate={() => {}}
         />
       </aside>

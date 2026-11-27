@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Neutral, light-first SaaS palette: white workspace, soft gray sidebar,
+/* Light-only neutral SaaS palette: white workspace, soft gray sidebar,
    hairline borders, ink-black primary, green for "ready" states. */
 :root {
   --background: #ffffff;
@@ -17,25 +17,10 @@
   --warning: #d97706;
   --destructive: #dc2626;
   --ring: #a1a1aa;
-}
-
-/* opt-in dark theme: the toggle in the top bar sets class="dark" on <html> */
-:root.dark {
-  --background: #111113;
-  --sidebar: #17171a;
-  --card: #17171a;
-  --muted: #222226;
-  --muted-foreground: #a1a1aa;
-  --foreground: #f4f4f5;
-  --border: #2a2a2f;
-  --primary: #f4f4f5;
-  --primary-foreground: #18181b;
-  --accent: #2a2a2f;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --destructive: #ef4444;
-  --ring: #52525b;
-  color-scheme: dark;
+  color-scheme: light;
+  /* keep the scrollbar's width reserved even while a modal locks scrolling,
+     so the page doesn't shift sideways when the sign-in dialog opens */
+  scrollbar-gutter: stable;
 }
 
 @theme inline {

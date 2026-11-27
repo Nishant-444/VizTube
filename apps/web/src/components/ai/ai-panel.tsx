@@ -1,13 +1,13 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ChevronDown, RotateCw, SendHorizonal, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Copy, FileText, RotateCw, SendHorizonal, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api/client";
-import type { AskResult, VideoStatus } from "@/lib/api/types";
+import type { AskResult, Transcript, VideoStatus } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { SimpleMarkdown } from "./simple-markdown";
 
@@ -149,10 +149,64 @@ function Chat({ videoId }: { videoId: string }) {
   );
 }
 
+function TranscriptView({ videoId }: { videoId: string }) {
+  const [copied, setCopied] = useState(false);
+  const transcript = useQuery({
+    queryKey: ["transcript", videoId],
+    queryFn: () => api<Transcript>(`/videos/${videoId}/transcript`),
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  if (transcript.isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+        <Spinner /> Loading transcript…
+      </div>
+    );
+  }
+  if (transcript.isError) {
+    return <p className="p-4 text-sm text-destructive">{errorMessage(transcript.error)}</p>;
+  }
+
+  const content = transcript.data?.content.trim() ?? "";
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+    } catch {
+      // clipboard can be blocked (insecure origin, permissions); nothing useful to show
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between border-b px-4 py-2">
+        <p className="text-xs text-muted-foreground">
+          {content.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+        </p>
+        <Button variant="ghost" size="sm" onClick={() => void copy()} aria-label="Copy transcript">
+          {copied ? <Check className="text-success" /> : <Copy />}
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      <p className="max-h-[28rem] overflow-y-auto whitespace-pre-wrap p-4 text-sm leading-relaxed">{content}</p>
+    </div>
+  );
+}
+
+type Tab = "ask" | "transcript";
+
 export function AiPanel({ videoId, ownerId, initialStatus }: { videoId: string; ownerId: string; initialStatus: VideoStatus }) {
   const { user, promptSignIn } = useAuth();
   const queryClient = useQueryClient();
   const [reprocessError, setReprocessError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("ask");
 
   // poll while the background job is running
   const status = useQuery({
@@ -218,13 +272,54 @@ export function AiPanel({ videoId, ownerId, initialStatus }: { videoId: string; 
     body = <Chat videoId={videoId} />;
   }
 
+  // the transcript is public: no sign-in or Q&A setting needed to read it
+  const showTranscript = tab === "transcript" && s.processingStatus === "COMPLETED" && s.hasTranscript;
+  if (tab === "transcript") {
+    if (s.processingStatus === "PROCESSING") {
+      body = (
+        <div className="flex items-start gap-3 p-4 text-sm text-muted-foreground">
+          <Spinner className="mt-0.5" />
+          <p>The transcript will appear here once this video finishes processing.</p>
+        </div>
+      );
+    } else if (!showTranscript) {
+      body = <p className="p-4 text-sm text-muted-foreground">No transcript is available for this video.</p>;
+    } else {
+      body = <TranscriptView videoId={videoId} />;
+    }
+  }
+
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "ask", label: "Ask AI", icon: <Sparkles className="size-4" /> },
+    { id: "transcript", label: "Transcript", icon: <FileText className="size-4" /> },
+  ];
+
   return (
-    <section aria-label="Ask AI about this video" className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <Sparkles className="size-4 text-primary" />
-        <h2 className="font-semibold">Ask this video</h2>
+    <section aria-label="AI tools for this video" className="overflow-hidden rounded-xl border bg-card">
+      <div role="tablist" aria-label="AI panel" className="flex gap-1 border-b px-2 pt-2">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            id={`ai-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls="ai-panel-body"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "-mb-px flex items-center gap-2 border-b-2 px-3 pb-2.5 pt-1.5 text-sm font-medium transition-colors",
+              tab === t.id
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
       </div>
-      {body}
+      <div role="tabpanel" id="ai-panel-body" aria-labelledby={`ai-tab-${tab}`}>
+        {body}
+      </div>
     </section>
   );
 }

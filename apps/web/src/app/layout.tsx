@@ -5,8 +5,6 @@ import { AppShell } from "@/components/layout/app-shell";
 import { getCurrentUser, hasRefreshToken } from "@/lib/api/server";
 import "./globals.css";
 
-// applies the saved theme before first paint so dark mode doesn't flash light
-const themeScript = `try{if(localStorage.getItem("viztube-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -24,11 +22,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-screen">
         <Providers initialUser={user} canRefresh={canRefresh}>
           <AppShell>{children}</AppShell>

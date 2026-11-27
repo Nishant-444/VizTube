@@ -10,7 +10,7 @@ export function LogoMark({ size = 32, className }: { size?: number; className?: 
       width={size}
       height={size}
       priority
-      className={cn("shrink-0 rounded-lg", className)}
+      className={cn("shrink-0", className)}
     />
   );
 }

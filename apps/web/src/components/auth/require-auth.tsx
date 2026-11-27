@@ -1,21 +1,17 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import { useAuth } from "./auth-provider";
 
 /**
- * Placeholder for a page that needs an account. Opens the sign-in dialog once
- * on arrival; if the visitor closes it, a button stays to reopen it.
+ * Placeholder for a page that needs an account. The sign-in dialog opens only
+ * when the visitor clicks the button, never on its own.
  */
 export function SignInRequired({ title, description }: { title: string; description: string }) {
-  const { user, restoring, promptSignIn } = useAuth();
-
-  useEffect(() => {
-    if (!user && !restoring) promptSignIn(description);
-  }, [user, restoring, promptSignIn, description]);
+  const { restoring, promptSignIn } = useAuth();
 
   if (restoring) {
     return (

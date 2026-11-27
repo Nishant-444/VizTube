@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SignInRequired } from "@/components/auth/require-auth";
-import { VideoList } from "@/components/video/video-card";
+import { VideoGrid } from "@/components/video/video-card";
 import { EmptyState } from "@/components/ui/misc";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser, serverApi } from "@/lib/api/server";
@@ -21,10 +21,10 @@ export default async function HistoryPage() {
   // the API answers 404 when the history is empty
   const videos = (await serverApi<VideoWithOwner[]>("/user/watch-history")) ?? [];
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader title="Watch history" count={videos.length} />
       {videos.length ? (
-        <VideoList videos={videos} />
+        <VideoGrid videos={videos} />
       ) : (
         <EmptyState title="No watch history" description="Videos you watch will be listed here." />
       )}

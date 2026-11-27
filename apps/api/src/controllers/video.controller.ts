@@ -588,6 +588,39 @@ const getVideoStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, status, 'Video status fetched successfully'));
 });
 
+// public: the full transcript of a video anyone can see
+const getVideoTranscript = asyncHandler(async (req, res) => {
+  const videoId = getSingleParam(req.params.videoId);
+  if (!videoId) throw new ApiError(400, 'Invalid or missing video ID');
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: {
+      userId: true,
+      isPublished: true,
+      transcript: { select: { content: true } },
+    },
+  });
+
+  // unpublished videos are only visible to their owner
+  if (!video || (!video.isPublished && video.userId !== req.user?.id)) {
+    throw new ApiError(404, 'Video not found');
+  }
+  if (!video.transcript) {
+    throw new ApiError(404, 'No transcript available for this video');
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { videoId, content: video.transcript.content },
+        'Transcript fetched successfully'
+      )
+    );
+});
+
 // owner-only: queue AI processing again for a video that failed
 const reprocessVideo = asyncHandler(async (req, res) => {
   const videoId = getSingleParam(req.params.videoId);
@@ -648,6 +681,7 @@ export {
   deleteVideo,
   togglePublishStatus,
   getVideoStatus,
+  getVideoTranscript,
   reprocessVideo,
   recordView,
   getSubscriptionFeed,

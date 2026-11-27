@@ -81,6 +81,11 @@ export interface VideoStatus {
   allowPublicQnA: boolean;
 }
 
+export interface Transcript {
+  videoId: string;
+  content: string;
+}
+
 export interface Comment {
   id: string;
   content: string;

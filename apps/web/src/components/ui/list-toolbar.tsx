@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import { ArrowDownUp, Check, LayoutGrid, List } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ArrowDownUp, Check } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { buttonVariants } from '@/components/ui/button';
 
 export interface SortOption {
   value: string;
@@ -14,33 +13,30 @@ export interface SortOption {
 }
 
 /**
- * "Sort by" dropdown plus optional grid/list toggle. Pages pass ready-made
+ * "Sort by" dropdown. Pages pass ready-made
  * URLs (functions can't cross the server/client boundary), so they stay
  * server-rendered.
  */
 export function ListToolbar({
   sorts,
   sort,
-  view,
-  viewHrefs,
 }: {
   sorts: SortOption[];
   sort: string;
-  view?: "grid" | "list";
-  viewHrefs?: { grid: string; list: string };
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", esc);
+    const close = (e: MouseEvent) =>
+      !ref.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
     return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", esc);
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
     };
   }, [open]);
 
@@ -53,15 +49,21 @@ export function ListToolbar({
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-haspopup="menu"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
+          className={buttonVariants({ variant: 'outline', size: 'sm' })}
         >
           <ArrowDownUp />
           <span>
-            Sort by<span className="hidden text-muted-foreground sm:inline">: {current.label}</span>
+            Sort by
+            <span className="hidden text-muted-foreground sm:inline">
+              : {current.label}
+            </span>
           </span>
         </button>
         {open && (
-          <div role="menu" className="absolute right-0 z-30 mt-1.5 w-44 rounded-lg border bg-card p-1 shadow-lg">
+          <div
+            role="menu"
+            className="absolute right-0 z-30 mt-1.5 w-44 rounded-lg border bg-card p-1 shadow-lg"
+          >
             {sorts.map((s) => (
               <Link
                 key={s.value}
@@ -77,27 +79,6 @@ export function ListToolbar({
           </div>
         )}
       </div>
-      {view && viewHrefs && (
-        <div className="flex rounded-lg border p-0.5" role="group" aria-label="Layout">
-          {(["list", "grid"] as const).map((v) => {
-            const Icon = v === "grid" ? LayoutGrid : List;
-            return (
-              <Link
-                key={v}
-                href={viewHrefs[v]}
-                aria-label={v === "grid" ? "Grid view" : "List view"}
-                aria-current={view === v ? "true" : undefined}
-                className={cn(
-                  "flex size-7 items-center justify-center rounded-md",
-                  view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className="size-4" />
-              </Link>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

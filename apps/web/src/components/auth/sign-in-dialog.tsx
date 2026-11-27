@@ -75,11 +75,11 @@ export function SignInDialog({
         >
           <X className="size-4" />
         </button>
-        <LogoMark size={40} />
-        <h2 id="signin-dialog-title" className="mt-4 text-lg font-semibold">
+        <LogoMark size={56} className="mx-auto" />
+        <h2 id="signin-dialog-title" className="mt-3 text-center text-lg font-semibold">
           Sign in to continue
         </h2>
-        <p className="mb-5 mt-1 text-sm text-muted-foreground">
+        <p className="mb-5 mt-1 text-center text-sm text-muted-foreground">
           {reason ?? "You need a VizTube account for this."}
         </p>
         <SignInForm idPrefix="dialog" autoFocus onSignedIn={onSignedIn} />

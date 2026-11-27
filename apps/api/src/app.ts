@@ -27,6 +27,7 @@ app.get('/', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>VizTube API | Production</title>
+        <link rel="icon" type="image/png" href="/logo.png">
         <style>
             :root {
                 --bg: #0f172a;
@@ -70,7 +71,20 @@ app.get('/', (req, res) => {
                 align-items: center;
                 justify-content: space-between;
             }
-            .status { 
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .brand img {
+                width: 48px;
+                height: 48px;
+                padding: 4px;
+                box-sizing: border-box;
+                background: #ffffff; /* the logo is black, so it needs a light tile on this dark page */
+                border-radius: 10px;
+            }
+            .status {
                 padding: 0.25rem 0.75rem; 
                 border-radius: 9999px; 
                 font-size: 0.875rem; 
@@ -167,7 +181,10 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <h1>
-                VizTube API 
+                <span class="brand">
+                    <img src="/logo.png" alt="VizTube logo">
+                    VizTube API
+                </span>
                 <span class="status">● v2.0.0 Live</span>
             </h1>
             <p class="subtitle">Production-grade video platform backend infrastructure.</p>

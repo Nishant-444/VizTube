@@ -119,13 +119,13 @@ export default async function WatchPage({ params }: PageProps<"/watch/[videoId]"
         </div>
       </div>
 
-      <div className="xl:col-start-2 xl:row-start-1 xl:self-start">{aiPanel}</div>
-
       <div className="min-w-0 xl:col-start-1 xl:row-start-2">
         <CommentsSection videoId={video.id} initialCount={video.commentsCount} />
       </div>
 
-      <div className="xl:col-start-2 xl:row-start-2">
+      {/* AI panel and up-next share one column so the list follows the panel directly */}
+      <div className="flex min-w-0 flex-col gap-6 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:self-start">
+        {aiPanel}
         <UpNext currentId={video.id} />
       </div>
     </div>

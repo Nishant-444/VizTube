@@ -57,10 +57,16 @@ function CommentForm({
   const [focused, setFocused] = useState(!!autoFocus || !!initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const { user, promptSignIn } = useAuth();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
+    // signed-out viewers can write a draft; it stays in the box while they sign in
+    if (!user) {
+      promptSignIn('Sign in to post your comment.');
+      return;
+    }
     setPending(true);
     setError(null);
     try {
@@ -239,14 +245,12 @@ function CommentItem({
 
         {!isReply && !editing && (
           <div className="mt-1 flex flex-col items-start gap-2">
-            {user && (
-              <button
-                className="rounded-full px-2 py-1 text-xs font-medium hover:bg-muted"
-                onClick={() => setReplying((r) => !r)}
-              >
-                Reply
-              </button>
-            )}
+            <button
+              className="rounded-full px-2 py-1 text-xs font-medium hover:bg-muted"
+              onClick={() => setReplying((r) => !r)}
+            >
+              Reply
+            </button>
             {replying && (
               <div className="flex w-full gap-3">
                 <Avatar src={user?.avatar} alt="" size={24} />
@@ -321,7 +325,7 @@ export function CommentsSection({
   videoId: string;
   initialCount: number;
 }) {
-  const { user, promptSignIn } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const comments = usePagedComments(
     ['comments', videoId],
@@ -360,22 +364,10 @@ export function CommentsSection({
           {formatCount(count)} Comment{count === 1 ? '' : 's'}
         </h2>
 
-        {user ? (
-          <div className="mb-6 flex gap-3">
-            <Avatar src={user.avatar} alt={user.fullname} size={40} />
-            <CommentForm placeholder="Add a comment..." onSubmit={add} />
-          </div>
-        ) : (
-          <p className="mb-6 text-sm text-muted-foreground">
-            <button
-              onClick={() => promptSignIn("Sign in to comment on videos.")}
-              className="font-medium text-foreground underline underline-offset-2"
-            >
-              Sign in
-            </button>{' '}
-            to join the conversation.
-          </p>
-        )}
+        <div className="mb-6 flex gap-3">
+          <Avatar src={user?.avatar} alt={user?.fullname ?? ''} size={40} />
+          <CommentForm placeholder="Add a comment..." onSubmit={add} />
+        </div>
 
         {comments.isLoading && <Spinner />}
         {comments.isError && <Alert>{errorMessage(comments.error)}</Alert>}

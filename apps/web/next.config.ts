@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // cookie read.
   cacheComponents: false,
 
+  // hide the dev-only "N" badge: it covered the sidebar toggle and the top-bar
+  // buttons. Build/runtime error overlays still appear.
+  devIndicators: false,
+
   experimental: {
     // video uploads stream through the rewrite below and can take minutes
     proxyTimeout: 10 * 60 * 1000,

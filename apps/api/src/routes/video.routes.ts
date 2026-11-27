@@ -29,6 +29,9 @@ router
 router
   .route('/:videoId/status')
   .get(optionalAuth, videoController.getVideoStatus);
+router
+  .route('/:videoId/transcript')
+  .get(optionalAuth, videoController.getVideoTranscript);
 router.route('/:videoId/view').post(optionalAuth, videoController.recordView);
 router
   .route('/:videoId/reprocess')

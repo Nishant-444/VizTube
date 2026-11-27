@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { VideoList } from "@/components/video/video-card";
+import { VideoGrid } from "@/components/video/video-card";
 import { EmptyState } from "@/components/ui/misc";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { PageHeader } from "@/components/ui/page-header";
@@ -40,14 +40,14 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
     `/search?${new URLSearchParams({ q, sort: o.sort ?? sort, ...(o.page && o.page > 1 ? { page: String(o.page) } : {}) })}`;
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader
         title={`Results for “${q}”`}
         count={data?.totalDocs ?? 0}
         actions={<ListToolbar sorts={SORTS.map((s) => ({ ...s, href: href({ sort: s.value }) }))} sort={sort} />}
       />
       {data?.docs.length ? (
-        <VideoList videos={data.docs} />
+        <VideoGrid videos={data.docs} />
       ) : (
         <EmptyState title="No results" description='Try different keywords. You can use "exact phrases" and -exclude words.' />
       )}
